@@ -1,0 +1,12 @@
+#VERSION 0.1, 07/06/2015
+- MENU Resource support added.
+- RESOURCE directory support added.
+- IMPORT directory support addded.
+- EXPORT directory support added.
+- PE32, DLL32 suppport added.
+- Can support only one section.
+- Section name is user defined
+- File Alignment is user defined.
+- Section Alignment is user defined.
+- VA(), RVA() functions added.
+- Work on other resource types continues.

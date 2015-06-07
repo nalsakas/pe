@@ -723,14 +723,6 @@
 	%[%$MENU_NAME]_end:
 %endmacro
 
-;%macro STRINGTABLE
-;	%$STRINGTALE_START:
-;%endmacro
-;
-;%macro ENDSTRINGTABLE
-;	%$STRINGTALE_END:
-;%endmacro
-
 ;##############################################################################
 ; PE HEADER Macros
 ; End user shouldn't use these macros explicitly

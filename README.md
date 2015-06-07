@@ -1,7 +1,21 @@
-For a long time I wanted to directly produce PE32, DLL32, PE64 and DLL64 files from the output of nasm assembler. Nasm doesn't have a direct output executable file but instead it has raw binary output and has advanced macro support. My aim in this project is to use nasm's macro capability and bin output together to directly produce executables. In order to make that happen I need to invent pretty a lot new macros. Some of them are PE header structures, section tables, data directories, etc.
-Why I created this macro sets? Answer is simple. Because I have a passion about inner workings of executables. Apart from because of this project I also have learned a lot while writing nasm macros and writing about pe file format.
-With these macro sets you can do amazing executables by yourself. You don't need any linker whatsoever. You can include any function you want to import by typing its library and name; you can export any local function; you can prepare resources of your application by your hand in the same source; you can experiment and get a deeper insight of pe format; etc. 
-Although there will be a lot of macros beneath, end user only need to know a few user space macros. An example usage is given below. As you notice names and usage is pretty easy.
+For a long time I wanted to directly produce PE32, DLL32, PE64 and DLL64 files from the 
+output of nasm assembler. Nasm doesn't have support of direct output to executable file
+but instead it has support of raw binary output and has advanced macro support. My aim in
+this project is to use nasm's macro capability to directly output executables. In order to
+make that happen I need to invent pretty a lot new macros. Some of them are PE header
+structures, section tables, data directories, etc.
+
+Why I created this macro sets? Answer is simple. Because I have a passion about inner workings
+of executables. Apart from because of this project I also have learned a lot while writing
+nasm macros and writing about pe file format.
+
+With these macro sets you can do amazing executables by yourself. You don't need any obj linker or
+resource compiler whatsoever. You can include any function you want to import by typing its library and name;
+you can export any local function; you can prepare resources of your application by your hand in the same source;
+you can experiment and get a deeper insight of pe format; etc.
+
+Although there will be a lot of macros beneath, end user only need to know a few user space macros.
+An example usage is given below. As you notice names and usage is pretty easy.
 
 Example PE32 file:
 
