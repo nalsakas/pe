@@ -1,3 +1,9 @@
+#VERSION 0.2, 11/06/2015
+- README file updated
+- Sample applications added.
+- EXPORT macro now needs a module name.
+- Bugs cleared from EXPORT macro.
+
 #VERSION 0.1, 07/06/2015
 - MENU Resource support added.
 - RESOURCE directory support added.

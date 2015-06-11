@@ -54,6 +54,18 @@
 ; RVA (Relative Virtual Address) function
 %define RVA(x) VA(x) - IMAGEBASE 
 
+; SIZEOF()
+%define SIZEOF(x) x%+_end  - x 
+
+; LOWORD macro, useful for resources
+;%define LOWORD(x)  (x & 0x0000FFFF)
+
+; HIWORD macro, useful for resources
+;%define HIWORD(x)  (x & 0xFFFF0000) >> 16
+
+; MAKEINTRESOURCE, useful for resources
+;%define MAKEINTRESOURCE(x) LOWORD(x)
+
 ;##############################################################################
 ; DEBUG Macros
 ; 
@@ -72,9 +84,6 @@
 
 ; Debug Messages
 %define bug(x) dbgmsg x
-
-; SIZEOF()
-%define SIZEOF(x) x%+_end  - x 
 ;##############################################################################
 ; PE MACROS
 ;
@@ -166,6 +175,9 @@
 ; ENDIMPORT
 ;##############################################################################
 %macro IMPORT 0
+	;ALIGN DWORD
+	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	
 	%assign %$IMPORT 1
 %endmacro
 
@@ -345,30 +357,29 @@
 ;   FUNC FunctionName
 ; ENDEXPORT
 ;##############################################################################
-%macro EXPORT 0
+; %1 = Module name
+%macro EXPORT 1
+	;ALIGN DWORD
+	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	
 	%assign %$EXPORT 1
+	%ifnempty %1
+		%define %$EXPORT_MODULE_NAME %1
+	%else
+		%warning EXPORT expects module name as input
+	%endif
 %endmacro
 
 %macro ENDEXPORT 0
-	; Get module name
-	%strlen %%strlen __FILE__
-	%assign %%i 0
-	%rep %%strlen
-		%assign %%i %%i + 1
-		%substr %%char __FILE__ %%strlen - %%i + 1, 1 
-		
-		%if %%char == '.'
-			%define %%DotFound true
-			%exitrep
+	; Get module name from parameter
+	%ifdef %$EXPORT_MODULE_NAME
+		%ifnstr %$EXPORT_MODULE_NAME
+			%defstr %%substr %$EXPORT_MODULE_NAME
+			BYTE %%Module_Name, %%substr, 0
+		%else
+			BYTE %%Module_Name, %$EXPORT_MODULE_NAME,0
 		%endif
-	%endrep
-	
-	%ifdef %%DotFound
-		%substr %%substr __FILE__ 1, %%strlen - %%i
-		BYTE %%Module_Name, %%substr, 0
-	%else
-		BYTE %%Module_Name, __FILE__,0
-	%endif	
+	%endif
 	bug( %?? ExportModuleName '%%Module_Name' %%Module_Name )
 	
 	
@@ -419,8 +430,8 @@
 	%ifnum %$EXPORT_COUNT
 		%assign %%i 0 
 		%rep %$EXPORT_COUNT
-			%assign %%i %%i + 1
 			dw %%i
+			%assign %%i %%i + 1
 			bug( %?? Ordinals '%%i' %%i )
 		%endrep
 	%endif
@@ -451,6 +462,9 @@
 ; ID/ENDID, TYPE/ENDTYPE, LANG/ENDLANG, etc.
 ;##############################################################################
 %macro RESOURCE 0
+	;ALIGN DWORD
+	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	
 	%assign %$RESOURCE 1
 	%assign %$RESOURCE_TYPECOUNT 0
 	%assign %$RESOURCE_IDCOUNT 0
@@ -722,7 +736,6 @@
 	%assign %$MENU_ITEM_NUMBER 0
 	%[%$MENU_NAME]_end:
 %endmacro
-
 ;##############################################################################
 ; PE HEADER Macros
 ; End user shouldn't use these macros explicitly
