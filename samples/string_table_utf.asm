@@ -76,8 +76,8 @@ RESOURCE
 ENDRESOURCE
 
 STRINGTABLE strtable
-	STRING 'Hello Word'
-	STRING "Merhaba Seyhmööz"
+	STRING 'Hello Word 1'
+	STRING "Hello World 2 (ÜGi)"
 ENDSTRINGTABLE
 
 END

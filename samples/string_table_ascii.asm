@@ -78,8 +78,8 @@ RESOURCE
 ENDRESOURCE
 
 STRINGTABLE strtable
-	STRING 'Hello Word'
-	STRING "Merhaba Seyhmus"
+	STRING 'Hello Word 1'
+	STRING "Hello World 2"
 ENDSTRINGTABLE
 
 END
