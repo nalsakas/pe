@@ -3,7 +3,7 @@
 ; Contact: nalsakas@gmail.com
 ;
 ; NASM PE Macro Sets Examples
-; Show example usage of PE macros
+; Shows example usage of PE macros
 ; Copyright (C) 2015  Seyhmus AKASLAN
 ;
 ; This program is free software; you can redistribute it and/or
@@ -98,7 +98,7 @@ WinMain:
 	push IDI_APPLICATION
 	push NULL
 	call [VA(LoadIconA)]
-	mov [VA(WNDCLASSEX.hIcon)], eax
+	mov [VA(WNDCLASSEX.hIcon)], eax	
 	
 	; Register Class
 	push VA(WNDCLASSEX)
@@ -112,8 +112,8 @@ WinMain:
 	push dword [VA(hIns)]
 	push NULL
 	push NULL
-	push 480
-	push 640
+	push 300
+	push 300
 	push 200
 	push 200
 	push WS_OVERLAPPEDWINDOW|WS_VISIBLE
@@ -190,14 +190,14 @@ WinProc:
 	je .destroy
 	cmp dword [ebp + 12], WM_COMMAND
 	je .command
-	jmp .defprog
+	jmp .defproc
 
 .return:
 	mov esp, ebp
 	pop ebp
 	ret 16
 
-.defprog:
+.defproc:
 	push dword [ebp + 20]
 	push dword [ebp + 16]
 	push dword [ebp + 12]
@@ -212,8 +212,10 @@ WinProc:
 	jmp .return
 	
 .command:
+	; MAKEINTRESOURCE (wParam)
 	mov eax, dword [ebp + 16]
 	and eax, 0x0000FFFF
+	
 	cmp eax, IDM_FILE_EXIT
 	je .command_exit
 	cmp eax, IDM_FILE_HELP
@@ -266,6 +268,7 @@ IMPORT
 		FUNC MessageBoxA
 		FUNC LoadCursorA
 		FUNC LoadIconA
+		FUNC LoadMenuA
 		FUNC RegisterClassExA
 		FUNC CreateWindowExA
 		FUNC ShowWindow
@@ -281,4 +284,4 @@ ENDIMPORT
 END
 
 ; Compile
-; nasm -f bin -o sample2.exe
+; nasm -f bin -o window_menu.exe

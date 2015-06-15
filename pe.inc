@@ -57,19 +57,18 @@
 ; SIZEOF()
 %define SIZEOF(x) x%+_end  - x 
 
-; LOWORD macro, useful for resources
-;%define LOWORD(x)  (x & 0x0000FFFF)
-
-; HIWORD macro, useful for resources
-;%define HIWORD(x)  (x & 0xFFFF0000) >> 16
-
-; MAKEINTRESOURCE, useful for resources
-;%define MAKEINTRESOURCE(x) LOWORD(x)
+; ALIGNMENT
+; Fills gaps with 0s
+; %1 = Size of alignment
+; %2 = Align realtive to label
+%macro BINALIGN 2
+	times (((%1) - (($ - (%2)) % (%1))) % (%1)) db 0
+%endmacro
 
 ;##############################################################################
 ; DEBUG Macros
 ; 
-; Used internally to testing purposes
+; Used internally for testing purposes
 ; To test variable value inside pe.inc use bug() function to output its value
 ;##############################################################################
 %macro DEBUG 0
@@ -131,6 +130,14 @@
 	IMAGE_SECTION_HEADER
 %endmacro
 
+%macro PE64 0
+	%error "PE64 doesn't implemented yet :("
+%endmacro
+
+%macro DLL64 0
+	%error "DLL64 doesn't implemented yet :("
+%endmacro
+
 %macro START 0
 	%$ENTRY_POINT:
 %endmacro
@@ -152,12 +159,14 @@
 	%endif
 	
 	;ALIGN
-	times (FALIGN - (($ - %$SECTION_START_1) % FALIGN)) db 0
+	;times (FALIGN - (($ - %$SECTION_START_1) % FALIGN)) db 0
+	BINALIGN FALIGN, %$SECTION_START_1
 	
 	%$SECTION_END_1:
 	%$IMAGE_END:
+	
+	; pops pe32, dll32, etc.
 	%pop
- 	;pe32, dll32, etc.
 %endmacro
 
 ;##############################################################################
@@ -176,7 +185,7 @@
 ;##############################################################################
 %macro IMPORT 0
 	;ALIGN DWORD
-	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
 	%assign %$IMPORT 1
 %endmacro
@@ -353,20 +362,20 @@
 ; EXPORT TABLE Macros
 ; EXPORT/ENDEXPORT
 ; USAGE
-; EXPORT
+; EXPORT module_name
 ;   FUNC FunctionName
 ; ENDEXPORT
 ;##############################################################################
 ; %1 = Module name
 %macro EXPORT 1
 	;ALIGN DWORD
-	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
 	%assign %$EXPORT 1
 	%ifnempty %1
 		%define %$EXPORT_MODULE_NAME %1
 	%else
-		%warning EXPORT expects module name as input
+		%error EXPORT expects module name as input
 	%endif
 %endmacro
 
@@ -458,12 +467,31 @@
 
 ;##############################################################################
 ; RESOURCE Macros
+;
 ; RESOURCE/ENDRESOURCE
-; ID/ENDID, TYPE/ENDTYPE, LANG/ENDLANG, etc.
+; ID/ENDID, TYPE/ENDTYPE, LANG/ENDLANG, LEAF, etc.
+
+; USAGE:
+; RESOURCE
+;   TYPE type_id
+;     ID resource_id
+;       LANG lang_id, sublang_id
+;         LEAF RVA(actual_resource_label), SIZEOF(actual_resource)
+;       ENDLANG
+;     ENDID
+;  ENDTYPE
+; ENDRESOURCE
+;
+; actual_resource:
+; (MENU/DAALOG/STRINGTABLE, Raw, User Defined etc.)
+;
+; Actual resources may have special structures like string tables, menus
+; and dialogs. They may also have no structure at all like a raw data or
+; they may have user defined structures.
 ;##############################################################################
 %macro RESOURCE 0
 	;ALIGN DWORD
-	;times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
+	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
 	%assign %$RESOURCE 1
 	%assign %$RESOURCE_TYPECOUNT 0
@@ -649,16 +677,22 @@
 
 ; %1 = name
 %macro MENU 1
-	;ALIGN DWORD
-	times (4 - (($ - %$IMAGE_DOS_HEADER) % 4)) db 0
-	
-	%1:
-	; Menu Header
-	WORD   %%wVersion
-	WORD   %%cbHeaderSize
-	
-	%define %$MENU_NAME %1	
-	%assign %$MENU_ITEM_NUMBER 0
+	%ifctx dialog
+		; menu macro inside dialog resources
+		%define %$DIALOG_MENU %1
+	%else
+		; menu macro inside menu resources 
+		;ALIGN DWORD
+		BINALIGN 4, %$IMAGE_DOS_HEADER
+
+		%1:
+		; Menu Header structure
+		WORD   %%wVersion
+		WORD   %%cbHeaderSize
+
+		%define %$MENU_NAME %1	
+		%assign %$MENU_ITEM_NUMBER 0
+	%endif
 %endmacro
 
 ; %1 = name
@@ -737,11 +771,356 @@
 	%[%$MENU_NAME]_end:
 %endmacro
 ;##############################################################################
+; DIALOG Macros
+; DIALOG name/ENDDIALOG
+; CONTROL, STYLE, FONT, CAPTION, MENU etc.
+;
+; USAGE:
+; DIALOG label, x, y, cx, cy
+;   CAPTION 'caption'
+;   STYLE bitflags
+;   EXSTYLE bitflags
+;   MENU MenuID
+;   FONT pointsize,'family'
+;   CONTROL 'caption', ClassID, ControlID, x, y, cx, cy, styles
+;   ...
+; ENDDIALOG
+;;##############################################################################
+
+; %1 = name/label
+; %2 = x 
+; %3 = y
+; %4 = width
+; %5 = height
+%macro DIALOG 5
+	;ALIGN DWORD
+	BINALIGN 4, %$IMAGE_DOS_HEADER
+	
+	%push dialog
+
+	; System Control Classes
+	%define %$CSBUTTON		0x0080
+	%define %$CSEDIT		0x0081
+	%define %$CSSTATIC		0x0082
+	%define %$CSLISTBOX		0x0083
+	%define %$CSSCROLLBAR	0x0084
+	%define %$CSCOMBOBOX	0x0085
+
+	%define %$DIALOG_NAME %1
+	%define %$DIALOG_X %2
+	%define %$DIALOG_Y %3
+	%define %$DIALOG_CX %4
+	%define %$DIALOG_CY %5
+	%define %$DIALOG_STYLE 0
+	%define %$DIALOG_EXSTYLE 0
+	%assign %$CONTROL_NUMBER 0
+	%$DIALOG_NAME:
+%endmacro
+
+%macro CAPTION 1
+	%ifctx dialog
+		%ifnstr %$DIALOG_CAPTION
+			%define %$DIALOG_CAPTION %1
+		%else
+			%error Caption must be string.
+		%endif
+	%else
+		%error Missing DIALOG statement.
+	%endif	
+%endmacro
+
+%macro STYLE 1
+	%ifctx dialog
+		%assign %$DIALOG_STYLE %$DIALOG_STYLE | %1
+	%else
+		%error Missing DIALOG statement
+	%endif	
+%endmacro
+
+%macro EXSTYLE 1
+	%ifctx dialog
+		%assign %$DIALOG_EXSTYLE %$DIALOG_EXSTYLE | %1
+	%else
+		%error Missing DIALOG statement
+	%endif	
+%endmacro
+
+%macro CLASS 1
+	%ifctx dialog
+		%define %$DIALOG_CLASS %1
+	%else
+		%error Missing DIALOG statement
+	%endif		
+%endmacro
+
+; 8, "MS Sans Serif"
+%macro FONT 2 
+	%ifctx dialog
+		%define %$DIALOG_FONT
+		%define %$DIALOG_FONT_SIZE %1
+		%define %$DIALOG_FONT_FAMILY %2
+	%else
+		%error Missing DIALOG statement
+	%endif		
+%endmacro
+
+; %1 = Name
+; %2 = ID
+; %3 = Class ID/Class Name
+; %4 = x
+; %5 = y
+; %6 = cx
+; %7 = cy
+; %8 = style
+; %9 = exstyle
+%macro CONTROL 7-9 0,0
+	%ifctx dialog
+		%assign %$CONTROL_NUMBER %$CONTROL_NUMBER + 1
+
+		%ifstr %1
+			%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_NAME %1	
+		%else
+			%error Control name must be a string.	
+		%endif
+
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_ID %2
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_CLASS %3
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_X %4
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_Y %5
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_CX %6
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_CY %7
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_STYLE %8 | WS_CHILD | WS_VISIBLE
+		%xdefine %$DIALOG_CONTROL_%[%$CONTROL_NUMBER]_EXSTYLE %9
+	%else
+		%error Missing DIALOG statement
+	%endif
+%endmacro
+
+%macro DEFPUSHBUTTON 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_PUSHBUTTON | WS_TABSTOP, %8 
+%endmacro
+
+%macro PUSHBUTTON 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_PUSHBUTTON | WS_TABSTOP, %8
+%endmacro
+
+%macro GROUPBOX 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_GROUPBOX, %8
+%endmacro
+
+%macro RADIOBUTTON 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_RADIOBUTTON | WS_TABSTOP, %8
+%endmacro
+
+%macro AUTOCHECKBOX 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_AUTOCHECKBOX | WS_TABSTOP, %8
+%endmacro
+
+%macro AUTO3STATE 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_AUTO3STATE | WS_TABSTOP, %8
+%endmacro
+
+%macro AUTORADIOBUTTON 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_AUTORADIOBUTTON | WS_TABSTOP, %8
+%endmacro
+
+%macro PUSHBOX 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_PUSHBOX | WS_TABSTOP, %8
+%endmacro
+
+%macro STATE3 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_3STATE | WS_TABSTOP, %8
+%endmacro
+
+%macro COMBOBOX 5-7 0,0
+	CONTROL "", %1, %$CSCOMBOBOX, %2, %3, %4, %5, %6 | CBS_SIMPLE | WS_TABSTOP, %7
+%endmacro
+
+%macro LTEXT 6-8 0,0
+	CONTROL %1, %2, %$CSSTATIC, %3, %4, %5, %6, %7 | SS_LEFT | WS_GROUP, %8
+%endmacro
+
+%macro RTEXT 6-8 0,0
+	CONTROL %1, %2, %$CSSTATIC, %3, %4, %5, %6, %7 | SS_RIGHT | WS_GROUP, %8
+%endmacro
+
+%macro CTEXT 6-8 0,0
+	CONTROL %1, %2, %$CSSTATIC, %3, %4, %5, %6, %7 | SS_CENTER | WS_GROUP, %8
+%endmacro
+
+%macro CHECKBOX 6-8 0,0
+	CONTROL %1, %2, %$CSBUTTON, %3, %4, %5, %6, %7 | BS_CHECKBOX | WS_TABSTOP, %8
+%endmacro
+
+%macro EDITTEXT 5-7 0,0
+	CONTROL "", %1, %$CSEDIT, %2, %3, %4, %5, %6 | ES_LEFT | WS_BORDER | WS_TABSTOP, %7
+%endmacro
+
+%macro LISTBOX 5-7 0,0
+	CONTROL "", %1, %$CSLISTBOX, %2, %3, %4, %5, %6 | ES_LEFT | WS_BORDER | WS_TABSTOP, %7
+%endmacro
+
+%macro SCROLLBAR 5-7 0,0
+	CONTROL "", %1, %$CSSCROLLBAR, %2, %3, %4, %5, %6 | SBS_HORZ, %7
+%endmacro
+
+%macro  ENDDIALOG 0
+	; DLGTEMPLATE and DLGITEMTEMPLATE structures
+	%ifctx dialog	
+		
+		DWORD %%Style, %$DIALOG_STYLE | WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE
+		DWORD %%ExtendedStyle, %$DIALOG_EXSTYLE 
+		WORD %%NumberOfItems, %$CONTROL_NUMBER
+		WORD %%x, %$DIALOG_X
+		WORD %%y, %$DIALOG_Y
+		WORD %%cx, %$DIALOG_CX
+		WORD %%cy, %$DIALOG_CY
+		
+		; Dialog Menu
+		%ifdef %$DIALOG_MENU
+			%ifstr %$DIALOG_MENU
+				;WORD %%MenuName, __utf16__(%$DIALOG_MENU),0
+				%error Only ID Menu Resources are supported.
+			%elifnum %$DIALOG_MENU
+				WORD %%MenuName, 0xFFFF,%$DIALOG_MENU
+			%endif
+		%else
+			WORD %%MenuName
+		%endif
+		
+		; Dialog Class
+		%ifdef %$DIALOG_CLASS
+			%ifstr %$DIALOG_CLASS
+				WORD %%ClassName, __utf16__(%$DIALOG_CLASS),0
+			%else
+				WORD %%ClassName,0xFFFF, %$DIALOG_CLASS
+			%endif
+		%else
+			WORD %%ClassName
+		%endif
+		
+		; Dialog Title
+		%ifdef %$DIALOG_CAPTION
+			%ifstr %$DIALOG_CAPTION
+				WORD %%szCaption, __utf16__(%$DIALOG_CAPTION),0
+			;%elifnum %$DIALOG_CAPTION
+			;	WORD %%szCaption, 0xFFFF, %$DIALOG_CAPTION
+			%endif
+		%else
+			WORD %%szCaption
+		%endif
+	
+		; Dialog Font
+		%ifdef %$DIALOG_FONT
+			WORD %%wPointSize, %$DIALOG_FONT_SIZE
+			WORD %%szFontName, __utf16__(%$DIALOG_FONT_FAMILY),0
+		%else
+			WORD %%wPointSize, 8
+			WORD %%szFontName, __utf16__("MS Sans Serif"),0
+		%endif		
+	
+		; Dialog Controls
+		%assign %%i 0
+		%rep %$CONTROL_NUMBER			
+			%assign %%i %%i + 1
+
+			;ALIGN DWORD
+			BINALIGN 4, %$DIALOG_NAME 
+			
+			DWORD %%STYLE_%[%%i], %$DIALOG_CONTROL_%[%%i]_STYLE 
+			DWORD %%EXTENDEDSTYLE_%[%%i], %$DIALOG_CONTROL_%[%%i]_EXSTYLE
+			WORD %%X_%[%%i], %$DIALOG_CONTROL_%[%%i]_X
+			WORD %%Y_%[%%i], %$DIALOG_CONTROL_%[%%i]_Y
+			WORD %%CX_%[%%i], %$DIALOG_CONTROL_%[%%i]_CX
+			WORD %%CY_%[%%i], %$DIALOG_CONTROL_%[%%i]_CY
+			WORD %%CONTROLID_%[%%i], %$DIALOG_CONTROL_%[%%i]_ID
+			
+			; Control Class
+			%ifstr %$DIALOG_CONTROL_%[%%i]_CLASS				
+				WORD %%CLASSID_%[%%i], __utf16__(%$DIALOG_CONTROL_%[%%i]_CLASS),0
+			%elifnum %$DIALOG_CONTROL_%[%%i]_CLASS
+				WORD %%CLASSID_%[%%i], 0xFFFF, %$DIALOG_CONTROL_%[%%i]_CLASS
+			%else
+				WORD %%CLASSID_%[%%i]
+			%endif
+			
+			; Control Title
+			%ifstr %$DIALOG_CONTROL_%[%%i]_NAME
+				WORD %%TEXT_%[%%i], __utf16__(%$DIALOG_CONTROL_%[%%i]_NAME),0
+			%elifnum %$DIALOG_CONTROL_%[%%i]_NAME
+				WORD %%TEXT_%[%%i], 0xFFFF, %$DIALOG_CONTROL_%[%%i]_NAME
+			%else
+				WORD %%TEXT_%[%%i]
+			%endif
+			
+			WORD %%CREATIONDATA_%[%%i]
+		%endrep
+	
+		; End
+		%[%$DIALOG_NAME]_end:
+		%pop dialog
+	%else
+		%error Missing DIALOG statement
+	%endif
+%endmacro
+
+;##############################################################################
+; STRINGTABLE Macros
+; STRINGTABLE / STRINGTABLE
+; SID(String Table Resource ID, String Index in table)
+;
+; USAGE:
+; LoadString hInst, SID(ResourceID, 1) --> First string in table 
+;
+; STRINGTABLE label
+;   STRING 'this is a string'
+;   ...
+; STRINGTABLE
+;;##############################################################################
+
+; STRINGTABLE MACROS
+%define SID(x, y) ((x - 1 ) << 4) + (y - 1)
+
+%macro STRINGTABLE	1
+	%push stringtable
+	%assign %$COUNT 0
+	%define %$NAME %1
+	%$NAME:
+%endmacro
+
+%macro ENDSTRINGTABLE 0
+	; Fill empty string slots
+	%rep 16 - %$COUNT
+		dw 0 ;padding
+	%endrep
+
+	%[%$NAME]_end:
+	%pop stringtable
+%endmacro
+
+%macro STRING 1
+	%assign %$COUNT %$COUNT + 1
+	
+	%if %$COUNT > 16
+		%error "Too many strings. STRING count can't exceed 16."
+	%endif
+	
+	%strlen %%strlen %1
+	WORD %%len, %%strlen
+	WORD %%str, __utf16__(%1)
+%endmacro
+;##############################################################################
 ; PE HEADER Macros
-; End user shouldn't use these macros explicitly
-; These structures are found on any windows.h include file
-; Converting C language structures into nasm is easy
-; Thanks to DWORD, WORD and BYTE macros declared earlier
+; Converting C language structures into nasm is easy with below macros.
+; DWORD var, WORD var, BYTE var
+; DWORD var[], WORD var[], BYTE var[]
+; 
+; IMAGE_DOS_HEADER
+; IMAGE_NT_SIGNATURE
+; IMAGE_FILE_HEADER
+; IMAGE_OPTIONAL_HEADER
+; IMAGE_DATA_DIRECTORY
+; IMAGE_SECTION_HEADER
 ;##############################################################################
 %macro IMAGE_DOS_HEADER 0
 	%$IMAGE_DOS_HEADER:
@@ -1014,17 +1393,18 @@
 	DWORD   %%Characteristics, %$SECTION_CHARACTERISTICS_1
 
 	;ALIGN
-	times (FALIGN - (($ - %$IMAGE_DOS_HEADER) % FALIGN)) db 0
+	;times (FALIGN - (($ - %$IMAGE_DOS_HEADER) % FALIGN)) db 0
+	BINALIGN FALIGN, %$IMAGE_DOS_HEADER
 	
 	%$IMAGE_SECTION_HEADER_END:
 	%$SECTION_START_1:
 %endmacro
 
 ;##############################################################################
-; General Purpose TYPE Macros
-; DWORD, WORD, BYTE
+; General Purpose type Macros
+;
+; DWORD var, WORD var, BYTE var
 ; DWORD var[], WORD var[], BYTE var[]
-; Very Handy When Building PE Header structures
 ;##############################################################################
 %macro DWORD 1-2+ 0h
 	%defstr %%label %1
@@ -1059,8 +1439,11 @@
 		%assign %%lenght %%end - %%start
 		%substr %%number %%label %%start, %%lenght
 		%deftok %%number %%number
-		
-		times %%number dd %2
+		%ifnum %%number
+			times %%number dd %2
+		%else
+			%error %?? number expected between array [] parantesis. 
+		%endif
 	%else
 		dd %2
 	%endif
@@ -1099,8 +1482,12 @@
 		%assign %%lenght %%end - %%start
 		%substr %%number %%label %%start, %%lenght
 		%deftok %%number %%number
-		
-		times %%number dw %2
+
+		%ifnum %%number
+			times %%number dw %2
+		%else
+			%error %?? number expected between array [] parantesis. 
+		%endif
 	%else
 		dw %2
 	%endif
@@ -1140,7 +1527,11 @@
 		%substr %%number %%label %%start, %%lenght
 		%deftok %%number %%number
 		
-		times %%number db %2
+		%ifnum %%number
+			times %%number db %2
+		%else
+			%error %?? number expected between array [] parantesis. 
+		%endif
 	%else
 		db %2
 	%endif

@@ -1,20 +1,34 @@
-For a long time I wanted to output PE32, DLL32, PE64 and DLL64 formats 
-directly from nasm assembler. Nasm doesn't have support of direct output to executable files or dll files
-but instead it has support of raw binary output and has advanced macro support. My aim in
-this project is to use nasm's macro capability to directly output executables. In order to
-make that happen I need to invent pretty a lot new macros. Some of them are PE header
-structures, section tables, data directories, resource macros, etc.
+For a long time I wanted to output PE32, DLL32, PE64 and DLL64 formats directly 
+from nasm assembler. Nasm doesn't have support of direct output to executable 
+files or dll files but instead it has support of raw binary output and has
+advanced macro support. My aim in this project is to use nasm's macro capability
+to directly output executables. In order to make that happen I need to invent
+pretty a lot new macros. Some of them are PE header structures, section tables,
+data directories, resource macros, etc.
 
-Why I created these macro sets? Answer is simple. Because I have a passion about inner workings
-of executables. Apart from that Ihave learned a lot while working with nasm macros and pe file format.
+Why I created these macro sets? Answer is simple. Because I have a passion about
+inner workings of executables. Apart from that Ihave learned a lot while working
+with nasm macros and pe file format.
 
-With these macro sets you can do amazing executables by yourself. You don't need any object linker or
-resource compiler whatsoever. You can import any function you want just by typing its name;
-you can export any local function you want; you can include any resource you want;
-you can experiment and get a deeper insight of pe file format, etc.
+With these macro sets you can do amazing executables by yourself. You don't need
+any object linker or resource compiler whatsoever. You can import any function
+you want just by typing its name; you can export any local function you want;
+you can include any resource you want; you can experiment and get a deeper insight
+of pe file format, etc.
 
-Although there are a lot of macros under the hood, end user only need to know a few of them.
-An example usage is given below. As you notice usage is pretty easy.
+Although there are a lot of macros under the hood, end user only need to know a
+few of them. Actually only 3 of them suffice for a very basic PE.
+
+%include 'pe.inc'
+PE32
+START
+  ret
+END
+
+Example above is a valid pe file. All it does is to return as soon as loaded. 
+As you can see there are only 3 macros you need to remember. PE32, START and END.  
+ 
+Now, look at the below example.
 
 Example PE32 file:
 
@@ -22,7 +36,7 @@ Example PE32 file:
 
 ; For 32-bit executable use PE32
 ; For 32-bit dll use DLL32
-; 64-bit PE and DLL's are not ready yet
+; PE64 and DLL64 aren''t ready yet
 PE32
 
 ; Data declarations
@@ -30,6 +44,7 @@ Title db 'Title of MessageBox',0
 
 ; enty point of executable
 START
+
 ; machine intructions
   ...
   push VA(Title)
@@ -61,23 +76,55 @@ EXPORT module_name
 ENDEXPORT
 
 ; Setup Resource Directory if you need to
+; This structure is also know as resource tree.
 RESOURCE
   TYPE type_id
   	ID resource_id
   		LANG
-  			LEAF RVA(resource_label), SIZEOF(resource)
+  			LEAF RVA(resource_label), SIZEOF(resource_size)
   		ENDLANG
   	ENDID
   ENDTYPE
 ENDRESOURCE
 
-; Menu resource
-MENU resource_label
+; Setup Menu if defined in resource tree
+MENU menu_label
 	MENUITEM 'name', item_id
 	POPUP 'name'
 		MENUITEM 'name', item_id
 	ENDPOPUP
 ENDMENU
+
+; Setup Dialog if defined in resource tree
+DIALOG dialog_label, x, y, cx, cy
+  STYLE dialog styles      ;Optional
+  EXSTYLE extended styles  ;Optional
+  FONT size, 'face'        ;Optional
+  CAPTION 'Caption Text'   ;Optional
+  
+  ; List Controls
+  ; Style and exstyle member of child controls are optional
+  CONTROL 'name', id, class_id, x, y, cx, cy, sytles, exstyles
+  
+  ; Below controls are based on CONTROL macro. 
+  ; Doesn't need class_id, because they are already declared inside.
+  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle
+  ....
+ENDDIALOG
+
+; Setup String Table if defined in resource tree
+; You can declare at most 16 strings in one table
+; You can reference strings declared below inside source code using
+; SID namely String ID macro. SID(x,y) expects 2 parameters. First one is ID of
+; string tables resource ID which declared in resource tree. Other parameter is
+; index of string declared inside string table. Index starts from 1 until 16.
+STRINGTABLE
+  STRING 'First String'
+  STRING 'Second String'
+  STRING 'Third String'
+  ...
+  STRING '16th string'
+ENDSTRINGTABLE
 
 END
 ; End of executable
@@ -86,7 +133,8 @@ You can find detailed analysis of user space macros below. Have fun.
 
 1) VA() / RVA() MACROS:
 Labels in assembly are offset based. They don't actually contain virtual addresses.
-VA() together with RVA() macros are invented to convert offset based labels into virtual addresses.
+VA() together with RVA() macros are invented to convert offset based labels into
+virtual addresses.
 
 Examples: 
 push dword [label] --> push dword [VA(label)]
@@ -94,13 +142,14 @@ mov eax, dword [label] --> mov eax, [VA(label)]
 call [label] --> call [VA(label)]
 call label --> call label --> this line doesn't require VA()
 
-Beware there are two types of call instructions. One uses relative displacement whose form is "call label". 
-This form doesn't require VA() macro. But the other form which needs absolute virtual address has "call [label]" form.
-This form as you expect requires VA() macro.
-VA() macro.
+Beware there are two types of call instructions. One uses relative displacement 
+whose form is "call label". This form doesn't require VA() macro. But the other 
+form which needs absolute virtual address has "call [label]" form. This form as 
+you expect requires VA() macro.
 
 2) IMPORT MACROS:
-If you want to use external functions from other libraries in your code use IMPORT macro. Import macro has following form.
+If you want to use external functions from other libraries in your code use 
+IMPORT macro. Import macro has following form.
 
 IMPORT
 	LIB Libname / user32.dll
@@ -111,15 +160,18 @@ IMPORT
 	ENDLIB
 ENIMPORT
 
-There can be more than one LIB/ENDLIB as well as more than one FUNC. Usage is very simple. All this macro does is to put import
-table where it is declared. Notice that libname and function names are in token form. They are not in string form. This macro turns
-function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to
-access imported function inside assembly use "call [VA(function_name)]".
+There can be more than one LIB/ENDLIB as well as more than one FUNC. Usage is 
+very simple. All this macro does is to put import table where it is declared. 
+Notice that libname and function names are in token form. They are not in string 
+form. This macro turns function names into labels. That labels behaves like 
+addresses of IAT entry of that particular function. If you need to access imported 
+function inside assembly use "call [VA(function_name)]".
 
 3) EXPORT MACROS:
-If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's
-can have exported functions. Sample usage is given below. Function_name is one of local function.
-Each export directory needs a module name which is its file name. Usually in this form "libname.dll". 
+If you want to export local functions of your executable use this macro. According 
+to PE documantation both EXE files and DLL's can have exported functions. Sample 
+usage is given below. Function_name is one of local function. Each export directory 
+needs a module name which is its file name. Usually in this form "libname.dll". 
 
 EXPORT module_name
 	FUNC function_name
@@ -128,11 +180,13 @@ ENDEXPORT
 
 
 4) RESOURCE MACROS:
-Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level.
-You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
-ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here.
-Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional
-structures. User defined resources and raw resources doesn't require any special format.
+Resources have tree like structures. According to documantation there can be only 
+3-level. First level is TYPE level. You declare type of resource here. RT_MENU, 
+RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
+ID_ICON, ID_MENU etc. Third level is language level. You define language and 
+sublanguage IDs here. Last level is known as leaf level. You can use leafs as 
+pointers to actual resources. Many resources require additional structures. User 
+defined resources and raw resources doesn't require any special format.
 
 Example:
 
@@ -158,13 +212,48 @@ RESOURCE
 	ENDTYPE
 ENDRESOURCE
 
-; Second define actual resources. They generally have special formats. Raw and user defined types of resources doesn't have
-; any special format.
+; Second define actual resources. They generally have special formats. Raw and 
+; user defined types of resources doesn't have any special format.
 
-; Menu macro generates special format of MENU resources.
+5) MENU MACROS
+; Menu macro generates special format required by MENU resources.
 MENU menu_label
-	MENUITEM 'name', item_id
+	; First parameter is name, second is id and optional third parameter is flags
+	MENUITEM 'name', menu_item_id
+	
+	; First parameter is name and optional second parameter is flags
+	POPUP 'name'
+       MENUITEM 'name', menu_item_id
+    ENDPOPUP	
 ENDMENU
 
-As you can see there can be more than one TYPE, ID and LANG entries in resource tree. But each entry must comply 3-level
-hierarcy. LEAF entries points to actual resouces.
+MENU macros helps tou create menu resources. There are only 2 type of macros
+declared inside. One is MENUITEM and other is POPUP/ENDPOPUP.
+
+6) DIALOG MACROS
+DIALOG label, x, y, cx, cy
+  STYLE xxx          ; Optional
+  EXSTYLE xxx        ; Optional
+  CAPTION 'text'     ; Optional
+  MENU resource_id   ; Optional
+  
+  ; Declare controls
+  CONTROL 'text', id, class_id, x, y, cx, cy, optional stye, optional exstyle
+
+  ; Predefined controls doesn't need class id
+  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle
+  EDITTEXT id, x, y, cx, cy, style, exstyle
+  ...
+ENDDIALOG
+
+You don't need to put STYLE, EXSTYLE, FONT and CAPTION macros beneath DIALOG macro.
+They are optional. If you need a dialog menu then put MENU beneath DIALOG macro.
+If you need a caption for your dialog then put a CAPTION macro beneath DIALOG macro.
+If you need additional styles put STYLE and EXSTYLE beneath DIALOG macro. If you
+don't put a STYLE, dialog uses default styles which are 
+WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE
+
+There are total 15 kinds of predefined child controls. All of them based on CONTROL
+macro. These child controls are DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,
+AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT,
+RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX and SCROLLBAR.

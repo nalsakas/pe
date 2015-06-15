@@ -3,7 +3,7 @@
 ; Contact: nalsakas@gmail.com
 ;
 ; NASM PE Macro Sets Examples
-; Show example usage of PE macros
+; Shows example usage of PE macros
 ; Copyright (C) 2015  Seyhmus AKASLAN
 ;
 ; This program is free software; you can redistribute it and/or
@@ -22,27 +22,65 @@
 ; MA  02110-1301, USA.
 ;##############################################################################
 %include "../pe.inc"
+%include '../windows.inc'
+
+; Source code is in UTF format too.
+
+; Resource IDs
+%define ID_STRTABLE 10h
 
 PE32
 
-BYTE Title, "PE MACRO SETS",0
-BYTE Text, "It works!",0
+; Data declarations	
+WORD buffer[100]
+WORD title, __utf16__("String Tables"),0
 
 START
+	
 	push 0
-	push VA(Title)
-	push VA(Text)
-	push 0
-	call [VA(MessageBoxA)]
-	ret 
+	call [VA(GetModuleHandleA)]
+	
+	; Load string from string table index 2, which is the second string
+	push 100 
+	push VA(buffer)
+	push SID(ID_STRTABLE, 2)
+	push eax
+	call [VA(LoadStringW)]
+	
+	push MB_OK | MB_ICONINFORMATION
+	push VA(title)
+	push VA(buffer)
+	push NULL
+	call [VA(MessageBoxW)]
+	
+	ret 16
 
 IMPORT
 	LIB user32.dll
-		FUNC MessageBoxA
+		FUNC LoadStringW
+		FUNC MessageBoxW
+	ENDLIB
+	LIB kernel32.dll
+		FUNC GetModuleHandleA
 	ENDLIB
 ENDIMPORT
+
+RESOURCE
+	TYPE RT_STRING
+		ID ID_STRTABLE
+			LANG
+				LEAF RVA(strtable), SIZEOF(strtable)
+			ENDLANG
+		ENDID
+	ENDTYPE
+ENDRESOURCE
+
+STRINGTABLE strtable
+	STRING 'Hello Word'
+	STRING "Merhaba Seyhmööz"
+ENDSTRINGTABLE
 
 END
 
 ; Compile
-; nasm -f bin -o sample1.exe
+; nasm -f bin -o string_table_utf.exe

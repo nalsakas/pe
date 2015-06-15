@@ -3,7 +3,7 @@
 ; Contact: nalsakas@gmail.com
 ;
 ; NASM PE Macro Sets Examples
-; Show example usage of PE macros
+; Shows example usage of PE macros
 ; Copyright (C) 2015  Seyhmus AKASLAN
 ;
 ; This program is free software; you can redistribute it and/or
@@ -22,45 +22,67 @@
 ; MA  02110-1301, USA.
 ;##############################################################################
 %include "../pe.inc"
+%include '../windows.inc'
 
-DLL32
+; Resource IDs
+%define ID_STRTABLE 10h
 
-BYTE Title, "PE MACRO SETS",0
-BYTE Text, "Exports works!",0
+PE32
+
+; Data declarations	
+WORD buffer[100]
+BYTE title, "String Tables",0
 
 START
-; [ebp + 16] Reserved
-; [ebp + 12] Reason
-; [ebp +  8] HANDLE hModule
-DllMain:
-	mov eax, 1
-	ret 12
-	
-ExportMe:
-	push ebp
-	mov ebp, esp
 	
 	push 0
-	push VA(Title)
-	push VA(Text)
-	push 0
+	call [VA(GetModuleHandleA)]
+	
+	
+	; Load string from string table index 2,
+	; which is the second string of table
+	
+	push 100 
+	push VA(buffer)
+	;push SID(ID_STRTABLE, 1)
+	push SID(ID_STRTABLE, 2)
+	push eax
+	call [VA(LoadStringA)]
+	
+	push MB_OK | MB_ICONINFORMATION
+	push VA(title)
+	push VA(buffer)
+	push NULL
 	call [VA(MessageBoxA)]
 	
-	mov esp, ebp
-	pop ebp
-	ret 
-
-EXPORT sample3.dll
-	FUNC ExportMe
-ENDEXPORT
+	ret 16
 
 IMPORT
 	LIB user32.dll
+		FUNC LoadStringA
 		FUNC MessageBoxA
 	ENDLIB
+	LIB kernel32.dll
+		FUNC GetModuleHandleA
+	ENDLIB
 ENDIMPORT
+
+RESOURCE
+	TYPE RT_STRING
+		ID ID_STRTABLE
+			LANG
+				LEAF RVA(strtable), SIZEOF(strtable)
+			ENDLANG
+		ENDID
+	ENDTYPE
+ENDRESOURCE
+
+STRINGTABLE strtable
+	STRING 'Hello Word'
+	STRING "Merhaba Seyhmus"
+ENDSTRINGTABLE
 
 END
 
 ; Compile
-; nasm -f bin -o sample3.dll
+; nasm -f bin -o string_table_ascii.exe 
