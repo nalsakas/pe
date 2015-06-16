@@ -34,7 +34,7 @@ END
 ```
 
 Example above is a valid pe file. All it does is to return as soon as loaded.  
-As you can see there are only 3 macros you need to remember. PE32, START and END.  
+As you can see there are only 3 macros you need to remember. *PE32, START* and *END*.  
  
 Now, look at the below example.
 
@@ -136,9 +136,9 @@ END
 
 You can find detailed analysis of user space macros below. Have fun.  
 
-1) VA() / RVA() MACROS:  
+**1) VA() / RVA() MACROS**  
 Labels in assembly are offset based. They don't actually contain virtual addresses.  
-VA() together with RVA() macros are invented to convert offset based labels into  
+*VA()* together with *RVA()* macros are invented to convert offset based labels into  
 virtual addresses.
 
 Examples:  
@@ -151,11 +151,11 @@ call label --> call label --> this line doesn't require VA()
 ```
 
 Beware there are two types of call instructions. One uses relative displacement  
-whose form is "call label". This form doesn't require VA() macro. But the other  
-form which needs absolute virtual address has "call [label]" form. This form as  
+whose form is `"call label"`. This form doesn't require *VA()* macro. But the other  
+form which needs absolute virtual address has `"call [label]"` form. This form as  
 you expect requires VA() macro.  
 
-2) IMPORT MACROS:  
+**2) IMPORT MACROS**  
 If you want to use external functions from other libraries in your code use   
 IMPORT macro. Import macro has following form.  
 
@@ -170,14 +170,14 @@ IMPORT
 ENIMPORT  
 ```
 
-There can be more than one LIB/ENDLIB as well as more than one FUNC. Usage is  
+There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is  
 very simple. All this macro does is to put import table where it is declared.  
 Notice that libname and function names are in token form. They are not in string 
 form. This macro turns function names into labels. That labels behaves like  
 addresses of IAT entry of that particular function. If you need to access imported   
 function inside assembly use `"call [VA(function_name)]"`.  
 
-3) EXPORT MACROS:  
+**3) EXPORT MACROS:**  
 If you want to export local functions of your executable use this macro. According  
 to PE documantation both EXE files and DLL's can have exported functions. Sample  
 usage is given below. Function_name is one of local function. Each export directory  
@@ -190,7 +190,7 @@ EXPORT module_name
 ENDEXPORT  
 ```
 
-4) RESOURCE MACROS:  
+**4) RESOURCE MACROS**  
 Resources have tree like structures. According to documantation there can be only  
 3-level. First level is TYPE level. You declare type of resource here. RT_MENU,  
 RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.  
@@ -228,7 +228,7 @@ ENDRESOURCE
 ; user defined types of resources doesn't have any special format.  
 ```
 
-5) MENU MACROS  
+**5) MENU MACROS**  
 
 ```
 ; Menu macro generates special format required by MENU resources.  
@@ -243,10 +243,10 @@ MENU menu_label
 ENDMENU  
 ```
 
-MENU macros helps tou create menu resources. There are only 2 type of macros    
-declared inside. One is MENUITEM and other is POPUP/ENDPOPUP.  
+*MENU* macros helps tou create menu resources. There are only 2 type of macros    
+declared inside. One is *MENUITEM* and other is *POPUP/ENDPOPUP*.  
 
-6) DIALOG MACROS  
+**6) DIALOG MACROS**  
 
 ```
 DIALOG label, x, y, cx, cy  
@@ -265,28 +265,28 @@ DIALOG label, x, y, cx, cy
 ENDDIALOG  
 ```
 
-You don't need to put STYLE, EXSTYLE, FONT and CAPTION macros beneath DIALOG macro.   
-They are optional. If you need a dialog menu then put MENU beneath DIALOG macro.  
-If you need a caption for your dialog then put a CAPTION macro beneath DIALOG macro.  
-If you need additional styles put STYLE and EXSTYLE beneath DIALOG macro. If you  
-don't put a STYLE, dialog uses default styles which are  
+You don't need to put *STYLE*, *EXSTYLE*, *FONT* and *CAPTION* macros beneath *DIALOG*  
+macro. They are optional. If you need a dialog menu then put MENU beneath *DIALOG* macro.  
+If you need a caption for your dialog then put a CAPTION macro beneath *DIALOG* macro.  
+If you need additional styles put *STYLE* and *EXSTYLE* beneath *DIALOG* macro. If you  
+don't put a *STYLE*, dialog uses default styles which are  
 
 `WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE`  
 
 There are total 15 kinds of predefined child controls. All of them based on CONTROL  
-macro. These child controls are DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,  
+macro. These child controls are *DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,  
 AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT,  
-RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX and SCROLLBAR.  
+RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX* and *SCROLLBAR*.  
 
-7) STRINGTABLE MACROS  
-One string table can hold up to 16 strings. IF you have more than 16 you need to  
+**7) STRINGTABLE MACROS**  
+One string table can hold up to 16 strings. If you have more than 16 strings you need to  
 open another table. Each table referenced by one resource ID in resource tree.  
-Normal resource compilers need you put string ID's in the table. We cant't use  
-this method here. Instead we put string in table without ID but with implied  
-index. Fİrst string has index 1, next is 2 an so on. When you need to reference  
+Normal resource compilers needs you put string ID's in the table. We don't use  
+this method here. Instead we put strings in table without ID but with implied  
+index. First string has index 1, second is 2 and so on. When you need to reference  
 a string in a table use SID() macro which stands for string ID. This macro excpects  
-2 parameter. First is resource ID of table defined in resource tree and second one is  
-index of string. SID() macro return calculated ID of each string in a table.  
+2 parameters. First one is resource ID of table defined in resource tree and second one is  
+index of string. SID() macro returns calculated ID of each string in a table.  
 
 ```
 push buffer_size  
