@@ -1,3 +1,27 @@
+;##############################################################################
+; Author : Seyhmus AKASLAN
+; Contact: nalsakas@gmail.com
+;
+; NASM PE Macro Sets
+; Used for direct output to executable file using only assembler.  
+; Copyright (C) 2015  Seyhmus AKASLAN
+
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation; either version 2
+; of the License, or (at your option) any later version.
+
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+; 
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, write to the Free Software
+; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+; MA  02110-1301, USA.
+;##############################################################################
+
 For a long time I wanted to output PE32, DLL32, PE64 and DLL64 formats directly 
 from nasm assembler. Nasm doesn't have support of direct output to executable 
 files or dll files but instead it has support of raw binary output and has
@@ -113,12 +137,7 @@ DIALOG dialog_label, x, y, cx, cy
 ENDDIALOG
 
 ; Setup String Table if defined in resource tree
-; You can declare at most 16 strings in one table
-; You can reference strings declared below inside source code using
-; SID namely String ID macro. SID(x,y) expects 2 parameters. First one is ID of
-; string tables resource ID which declared in resource tree. Other parameter is
-; index of string declared inside string table. Index starts from 1 until 16.
-STRINGTABLE
+STRINGTABLE label
   STRING 'First String'
   STRING 'Second String'
   STRING 'Third String'
@@ -257,3 +276,30 @@ There are total 15 kinds of predefined child controls. All of them based on CONT
 macro. These child controls are DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,
 AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT,
 RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX and SCROLLBAR.
+
+7) STRINGTABLE MACROS
+One string table can hold up to 16 strings. IF you have more than 16 you need to
+open another table. Each table referenced by one resource ID in resource tree.
+Normal resource compilers need you put string ID's in the table. We cant't use 
+this method here. Instead we put string in table without ID but with implied 
+index. Fİrst string has index 1, next is 2 an so on. When you need to reference
+a string in a table use SID() macro which stands for string ID. This macro excpects
+2 parameter. First is resource ID of table defined in resource tree and second one is
+index of string. SID() macro return calculated ID of each string in a table.
+
+push buffer_size
+push VA(buffer)
+push SID(ID_TABLE, 1)        ; loads fisrt string
+push dword [VA(hInstance)]
+call [VA(LoadStringA)] 
+
+Strings  in tables are stored as 16-bit unicode strings. That means when you 
+create a buffer you need twice size of a char. In asm that equals size of a word.
+
+STRINGTABLE label
+  STRING 'First String'
+  STRING 'Second String'
+  STRING 'Third String'
+  ...
+  STRING '16th string'
+ENDSTRINGTABLE
