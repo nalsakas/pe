@@ -21,11 +21,13 @@ of pe file format, etc.
 Although there are a lot of macros under the hood, end user only need to know a  
 few of them. Actually only 3 of them suffice for a very basic PE.
 
+```
 %include 'pe.inc'  
 PE32  
 START  
   ret  
-END  
+END
+```
 
 Example above is a valid pe file. All it does is to return as soon as loaded.  
 As you can see there are only 3 macros you need to remember. PE32, START and END.  
@@ -34,6 +36,7 @@ Now, look at the below example.
 
 Example PE32 file:
 
+```
 %include "pe.inc"  
 
 ; For 32-bit executable use PE32  
@@ -125,6 +128,7 @@ ENDSTRINGTABLE
 
 END  
 ; End of executable  
+```
 
 You can find detailed analysis of user space macros below. Have fun.  
 
