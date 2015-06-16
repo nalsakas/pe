@@ -22,11 +22,11 @@ Although there are a lot of macros under the hood, end user only need to know a
 few of them. Actually only 3 of them suffice for a very basic PE.
 
 `
-%include 'pe.inc'
-PE32
-START
-  ret
-END
+%include 'pe.inc'  
+PE32  
+START  
+  ret  
+END  
 `
 
 Example above is a valid pe file. All it does is to return as soon as loaded.  
@@ -37,100 +37,100 @@ Now, look at the below example.
 Example PE32 file:
 
 `
-%include "pe.inc"
+%include "pe.inc"  
 
-; For 32-bit executable use PE32
-; For 32-bit dll use DLL32
-; PE64 and DLL64 aren''t ready yet
-PE32
+; For 32-bit executable use PE32  
+; For 32-bit dll use DLL32  
+; PE64 and DLL64 aren''t ready yet  
+PE32  
 
-; Data declarations
-Title db 'Title of MessageBox',0
+; Data declarations  
+Title db 'Title of MessageBox',0  
 
-; enty point of executable
-START
+; enty point of executable  
+START  
 
-; machine intructions
-  ...
-  push VA(Title)
-  push 0
-  call [VA(MessageBoxA)]
+; machine intructions  
+  ...  
+  push VA(Title)  
+  push 0  
+  call [VA(MessageBoxA)]  
 
-  LocalFunction:
-     ...
-     ret
-     
-; Setup import directory if you need to
-IMPORT
-  ; write down imported dll's
-  LIB user32.dll
-    ; write down imported functions
-    FUNC MessageBoxA
-  ENDIMPORT
-  LIB kernel32.dll
-    FUNC ExitProcess
-    ...
-  ENDLIB
-ENDIMPORT
+  LocalFunction:  
+     ...  
+     ret  
 
-; Setup Export Directory if you need to
-EXPORT module_name
-   ; write down local functions to export
-   FUNC LocalFunction
-   ...
-ENDEXPORT
+; Setup import directory if you need to  
+IMPORT  
+  ; write down imported dll's  
+  LIB user32.dll  
+    ; write down imported functions  
+    FUNC MessageBoxA  
+  ENDIMPORT  
+  LIB kernel32.dll  
+    FUNC ExitProcess  
+    ...  
+  ENDLIB  
+ENDIMPORT  
 
-; Setup Resource Directory if you need to
-; This structure is also know as resource tree.
-RESOURCE
-  TYPE type_id
-  	ID resource_id
-  		LANG
-  			LEAF RVA(resource_label), SIZEOF(resource_size)
-  		ENDLANG
-  	ENDID
-  ENDTYPE
-ENDRESOURCE
+; Setup Export Directory if you need to  
+EXPORT module_name  
+   ; write down local functions to export  
+   FUNC LocalFunction  
+   ...  
+ENDEXPORT  
 
-; Setup Menu if defined in resource tree
-MENU menu_label
-	MENUITEM 'name', item_id
-	POPUP 'name'
-		MENUITEM 'name', item_id
-	ENDPOPUP
-ENDMENU
+; Setup Resource Directory if you need to  
+; This structure is also know as resource tree.  
+RESOURCE  
+  TYPE type_id  
+  	ID resource_id  
+  		LANG  
+  			LEAF RVA(resource_label), SIZEOF(resource_size)  
+  		ENDLANG  
+  	ENDID  
+  ENDTYPE  
+ENDRESOURCE  
 
-; Setup Dialog if defined in resource tree
-DIALOG dialog_label, x, y, cx, cy
-  STYLE dialog styles      ;Optional
-  EXSTYLE extended styles  ;Optional
-  FONT size, 'face'        ;Optional
-  CAPTION 'Caption Text'   ;Optional
+; Setup Menu if defined in resource tree  
+MENU menu_label  
+	MENUITEM 'name', item_id  
+	POPUP 'name'  
+		MENUITEM 'name', item_id  
+	ENDPOPUP  
+ENDMENU  
+
+; Setup Dialog if defined in resource tree  
+DIALOG dialog_label, x, y, cx, cy  
+  STYLE dialog styles      ;Optional  
+  EXSTYLE extended styles  ;Optional  
+  FONT size, 'face'        ;Optional  
+  CAPTION 'Caption Text'   ;Optional  
   
-  ; List Controls
-  ; Style and exstyle member of child controls are optional
-  CONTROL 'name', id, class_id, x, y, cx, cy, sytles, exstyles
+  ; List Controls  
+  ; Style and exstyle member of child controls are optional  
+  CONTROL 'name', id, class_id, x, y, cx, cy, sytles, exstyles  
   
-  ; Below controls are based on CONTROL macro. 
-  ; Doesn't need class_id, because they are already declared inside.
-  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle
-  ....
-ENDDIALOG
+  ; Below controls are based on CONTROL macro.  
+  ; Doesn't need class_id, because they are already declared inside.  
+  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle  
+  ...  
+ENDDIALOG  
 
-; Setup String Table if defined in resource tree
-STRINGTABLE label
-  STRING 'First String'
-  STRING 'Second String'
-  STRING 'Third String'
-  ...
-  STRING '16th string'
-ENDSTRINGTABLE
+; Setup String Table if defined in resource tree  
+STRINGTABLE label  
+  STRING 'First String'  
+  STRING 'Second String'  
+  STRING 'Third String'  
+  ...  
+  STRING '16th string'  
+ENDSTRINGTABLE  
 
-END
-; End of executable
+END  
+; End of executable  
 `
 
-You can find detailed analysis of user space macros below. Have fun.
+You can find detailed analysis of user space macros below. Have fun.  
 
 1) VA() / RVA() MACROS:  
 Labels in assembly are offset based. They don't actually contain virtual addresses.  
@@ -139,30 +139,30 @@ virtual addresses.
 
 Examples:  
 `
-push dword [label] --> push dword [VA(label)]
-mov eax, dword [label] --> mov eax, [VA(label)]
-call [label] --> call [VA(label)]
-call label --> call label --> this line doesn't require VA()
+push dword [label] --> push dword [VA(label)]  
+mov eax, dword [label] --> mov eax, [VA(label)]  
+call [label] --> call [VA(label)]  
+call label --> call label --> this line doesn't require VA()  
 `
 
 Beware there are two types of call instructions. One uses relative displacement  
 whose form is "call label". This form doesn't require VA() macro. But the other  
 form which needs absolute virtual address has "call [label]" form. This form as  
-you expect requires VA() macro.
+you expect requires VA() macro.  
 
 2) IMPORT MACROS:  
 If you want to use external functions from other libraries in your code use   
-IMPORT macro. Import macro has following form.
+IMPORT macro. Import macro has following form.  
 
 `
-IMPORT
-	LIB Libname / user32.dll
-		FUNC Functionname / MessageBoxA
-	ENDLIB
-	LIB kernel32.dll
-		FUNC ExitProcess
-	ENDLIB
-ENIMPORT
+IMPORT  
+	LIB Libname / user32.dll  
+		FUNC Functionname / MessageBoxA  
+	ENDLIB  
+	LIB kernel32.dll  
+		FUNC ExitProcess  
+	ENDLIB  
+ENIMPORT  
 `
 
 There can be more than one LIB/ENDLIB as well as more than one FUNC. Usage is  
@@ -170,7 +170,7 @@ very simple. All this macro does is to put import table where it is declared.
 Notice that libname and function names are in token form. They are not in string 
 form. This macro turns function names into labels. That labels behaves like  
 addresses of IAT entry of that particular function. If you need to access imported   
-function inside assembly use "call [VA(function_name)]".
+function inside assembly use `"call [VA(function_name)]"`.  
 
 3) EXPORT MACROS:  
 If you want to export local functions of your executable use this macro. According  
@@ -179,10 +179,10 @@ usage is given below. Function_name is one of local function. Each export direct
 needs a module name which is its file name. Usually in this form "libname.dll".  
 
 `
-EXPORT module_name
-	FUNC function_name
-	...
-ENDEXPORT
+EXPORT module_name  
+	FUNC function_name  
+	...  
+ENDEXPORT  
 `
 
 4) RESOURCE MACROS:  
@@ -192,84 +192,84 @@ RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources he
 ID_ICON, ID_MENU etc. Third level is language level. You define language and  
 sublanguage IDs here. Last level is known as leaf level. You can use leafs as  
 pointers to actual resources. Many resources require additional structures. User  
-defined resources and raw resources doesn't require any special format.
+defined resources and raw resources doesn't require any special format.  
 
-Example:
+Example:  
 
 `
 ; First define resource tree, which has type, id, lang and pointer to actual resources.
-RESOURCE
-	TYPE type_id / RT_MENU
-		ID resource_id
-			LANG lang_id, sublang_id / default is 0,0 for language neutral
-				LEAF RVA(menu_label), SIZEOF(menu)
-			ENDLANG
-		ENDID
-		ID resource_id2
-			...
-		ENDID
-	ENDTYPE
+RESOURCE  
+	TYPE type_id / RT_MENU  
+		ID resource_id  
+			LANG lang_id, sublang_id / default is 0,0 for language neutral  
+				LEAF RVA(menu_label), SIZEOF(menu)  
+			ENDLANG  
+		ENDID  
+		ID resource_id2  
+			...  
+		ENDID  
+	ENDTYPE  
 	
-	TYPE RT_DATA
-		ID resource_id2
-			LANG
-				LEAF RVA(raw_data), SIZEOF(raw_data)
-			ENDLANG
-		ENDID
-	ENDTYPE
-ENDRESOURCE
+	TYPE RT_DATA  
+		ID resource_id2  
+			LANG  
+				LEAF RVA(raw_data), SIZEOF(raw_data)  
+			ENDLANG  
+		ENDID  
+	ENDTYPE  
+ENDRESOURCE  
 
 ; Second define actual resources. They generally have special formats. Raw and 
-; user defined types of resources doesn't have any special format.
+; user defined types of resources doesn't have any special format.  
 `
 
 5) MENU MACROS  
 `
-; Menu macro generates special format required by MENU resources.
-MENU menu_label
-	; First parameter is name, second is id and optional third parameter is flags
-	MENUITEM 'name', menu_item_id
-	
-	; First parameter is name and optional second parameter is flags
-	POPUP 'name'
-       MENUITEM 'name', menu_item_id
+; Menu macro generates special format required by MENU resources.  
+MENU menu_label  
+	; First parameter is name, second is id and optional third parameter is flags  
+	MENUITEM 'name', menu_item_id  
+	 
+	; First parameter is name and optional second parameter is flags  
+	POPUP 'name'  
+       MENUITEM 'name', menu_item_id  
     ENDPOPUP	
-ENDMENU
+ENDMENU  
 `
 
-MENU macros helps tou create menu resources. There are only 2 type of macros  
-declared inside. One is MENUITEM and other is POPUP/ENDPOPUP.
+MENU macros helps tou create menu resources. There are only 2 type of macros    
+declared inside. One is MENUITEM and other is POPUP/ENDPOPUP.  
 
 6) DIALOG MACROS  
 `
-DIALOG label, x, y, cx, cy
-  STYLE xxx          ; Optional
-  EXSTYLE xxx        ; Optional
-  CAPTION 'text'     ; Optional
-  MENU resource_id   ; Optional
+DIALOG label, x, y, cx, cy  
+  STYLE xxx          ; Optional  
+  EXSTYLE xxx        ; Optional  
+  CAPTION 'text'     ; Optional  
+  MENU resource_id   ; Optional  
   
-  ; Declare controls
-  CONTROL 'text', id, class_id, x, y, cx, cy, optional stye, optional exstyle
+  ; Declare controls  
+  CONTROL 'text', id, class_id, x, y, cx, cy, optional stye, optional exstyle  
 
-  ; Predefined controls doesn't need class id
-  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle
-  EDITTEXT id, x, y, cx, cy, style, exstyle
-  ...
-ENDDIALOG
+  ; Predefined controls doesn't need class id  
+  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle  
+  EDITTEXT id, x, y, cx, cy, style, exstyle  
+  ...  
+ENDDIALOG  
 `
 
-You don't need to put STYLE, EXSTYLE, FONT and CAPTION macros beneath DIALOG macro.  
+You don't need to put STYLE, EXSTYLE, FONT and CAPTION macros beneath DIALOG macro.   
 They are optional. If you need a dialog menu then put MENU beneath DIALOG macro.  
 If you need a caption for your dialog then put a CAPTION macro beneath DIALOG macro.  
 If you need additional styles put STYLE and EXSTYLE beneath DIALOG macro. If you  
-don't put a STYLE, dialog uses default styles which are
+don't put a STYLE, dialog uses default styles which are  
 
-WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE
+WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE  
 
 There are total 15 kinds of predefined child controls. All of them based on CONTROL  
 macro. These child controls are DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,  
 AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT,  
-RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX and SCROLLBAR.
+RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX and SCROLLBAR.  
 
 7) STRINGTABLE MACROS  
 One string table can hold up to 16 strings. IF you have more than 16 you need to  
@@ -279,26 +279,26 @@ this method here. Instead we put string in table without ID but with implied
 index. Fİrst string has index 1, next is 2 an so on. When you need to reference  
 a string in a table use SID() macro which stands for string ID. This macro excpects  
 2 parameter. First is resource ID of table defined in resource tree and second one is  
-index of string. SID() macro return calculated ID of each string in a table.
+index of string. SID() macro return calculated ID of each string in a table.  
 
 `
-push buffer_size
-push VA(buffer)
-push SID(ID_TABLE, 1)        ; loads fisrt string
-push dword [VA(hInstance)]
-call [VA(LoadStringA)] 
+push buffer_size  
+push VA(buffer)  
+push SID(ID_TABLE, 1)        ; loads fisrt string  
+push dword [VA(hInstance)]  
+call [VA(LoadStringA)]   
 `
 
 Strings  in tables are stored as 16-bit unicode strings. That means when you  
 create a buffer you need twice size of a char. In asm that equals size of a word.  
 
 `
-STRINGTABLE label
-  STRING 'First String'
-  STRING 'Second String'
-  STRING 'Third String'
-  ...
-  STRING '16th string'
-ENDSTRINGTABLE
+STRINGTABLE label  
+  STRING 'First String'  
+  STRING 'Second String'  
+  STRING 'Third String'  
+  ...  
+  STRING '16th string'  
+ENDSTRINGTABLE  
 `
 
