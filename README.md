@@ -1,5 +1,9 @@
 #**NASM PE MACROS**
 
+Author: Seyhmus AKASLAN  
+Contact: nalsakas@gmail.com  
+License: GPL v2   
+
 For a long time I wanted to output PE32, DLL32, PE64 and DLL64 formats directly  
 from nasm assembler. Nasm doesn't have support of direct output to executable  
 files or dll files but instead it has support of raw binary output and has  
