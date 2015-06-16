@@ -21,13 +21,11 @@ of pe file format, etc.
 Although there are a lot of macros under the hood, end user only need to know a  
 few of them. Actually only 3 of them suffice for a very basic PE.
 
-`
 %include 'pe.inc'  
 PE32  
 START  
   ret  
 END  
-`
 
 Example above is a valid pe file. All it does is to return as soon as loaded.  
 As you can see there are only 3 macros you need to remember. PE32, START and END.  
@@ -36,7 +34,6 @@ Now, look at the below example.
 
 Example PE32 file:
 
-`
 %include "pe.inc"  
 
 ; For 32-bit executable use PE32  
@@ -128,7 +125,6 @@ ENDSTRINGTABLE
 
 END  
 ; End of executable  
-`
 
 You can find detailed analysis of user space macros below. Have fun.  
 
@@ -138,12 +134,12 @@ VA() together with RVA() macros are invented to convert offset based labels into
 virtual addresses.
 
 Examples:  
-`
+
 push dword [label] --> push dword [VA(label)]  
 mov eax, dword [label] --> mov eax, [VA(label)]  
 call [label] --> call [VA(label)]  
 call label --> call label --> this line doesn't require VA()  
-`
+
 
 Beware there are two types of call instructions. One uses relative displacement  
 whose form is "call label". This form doesn't require VA() macro. But the other  
@@ -154,7 +150,7 @@ you expect requires VA() macro.
 If you want to use external functions from other libraries in your code use   
 IMPORT macro. Import macro has following form.  
 
-`
+
 IMPORT  
 	LIB Libname / user32.dll  
 		FUNC Functionname / MessageBoxA  
@@ -163,7 +159,7 @@ IMPORT
 		FUNC ExitProcess  
 	ENDLIB  
 ENIMPORT  
-`
+
 
 There can be more than one LIB/ENDLIB as well as more than one FUNC. Usage is  
 very simple. All this macro does is to put import table where it is declared.  
@@ -178,12 +174,12 @@ to PE documantation both EXE files and DLL's can have exported functions. Sample
 usage is given below. Function_name is one of local function. Each export directory  
 needs a module name which is its file name. Usually in this form "libname.dll".  
 
-`
+
 EXPORT module_name  
 	FUNC function_name  
 	...  
 ENDEXPORT  
-`
+
 
 4) RESOURCE MACROS:  
 Resources have tree like structures. According to documantation there can be only  
@@ -196,7 +192,7 @@ defined resources and raw resources doesn't require any special format.
 
 Example:  
 
-`
+
 ; First define resource tree, which has type, id, lang and pointer to actual resources.
 RESOURCE  
 	TYPE type_id / RT_MENU  
@@ -221,10 +217,10 @@ ENDRESOURCE
 
 ; Second define actual resources. They generally have special formats. Raw and 
 ; user defined types of resources doesn't have any special format.  
-`
+
 
 5) MENU MACROS  
-`
+
 ; Menu macro generates special format required by MENU resources.  
 MENU menu_label  
 	; First parameter is name, second is id and optional third parameter is flags  
@@ -235,13 +231,13 @@ MENU menu_label
        MENUITEM 'name', menu_item_id  
     ENDPOPUP	
 ENDMENU  
-`
+
 
 MENU macros helps tou create menu resources. There are only 2 type of macros    
 declared inside. One is MENUITEM and other is POPUP/ENDPOPUP.  
 
 6) DIALOG MACROS  
-`
+
 DIALOG label, x, y, cx, cy  
   STYLE xxx          ; Optional  
   EXSTYLE xxx        ; Optional  
@@ -256,7 +252,7 @@ DIALOG label, x, y, cx, cy
   EDITTEXT id, x, y, cx, cy, style, exstyle  
   ...  
 ENDDIALOG  
-`
+
 
 You don't need to put STYLE, EXSTYLE, FONT and CAPTION macros beneath DIALOG macro.   
 They are optional. If you need a dialog menu then put MENU beneath DIALOG macro.  
@@ -281,18 +277,18 @@ a string in a table use SID() macro which stands for string ID. This macro excpe
 2 parameter. First is resource ID of table defined in resource tree and second one is  
 index of string. SID() macro return calculated ID of each string in a table.  
 
-`
+
 push buffer_size  
 push VA(buffer)  
 push SID(ID_TABLE, 1)        ; loads fisrt string  
 push dword [VA(hInstance)]  
 call [VA(LoadStringA)]   
-`
+
 
 Strings  in tables are stored as 16-bit unicode strings. That means when you  
 create a buffer you need twice size of a char. In asm that equals size of a word.  
 
-`
+
 STRINGTABLE label  
   STRING 'First String'  
   STRING 'Second String'  
@@ -300,5 +296,5 @@ STRINGTABLE label
   ...  
   STRING '16th string'  
 ENDSTRINGTABLE  
-`
+
 
