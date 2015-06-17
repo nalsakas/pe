@@ -29,6 +29,11 @@
 %define IDM_FILE_EXIT 11
 %define IDM_FILE_HELP 12
 
+%define ID_ACCELERATOR 20
+%define ID_ACTION_SHIFT_A 21
+%define ID_ACTION_CONTROL_F5 22
+%define ID_ACTION_ALT_ENTER 23
+
 ; Create 32-bit Windows Executable
 PE32
 
@@ -49,28 +54,27 @@ WNDCLASSEX:
 WNDCLASSEX_end:
 
 MSG:
-	DWORD	hwnd
-	DWORD	message
-	WORD	wParam
-	WORD	lParam
-	DWORD	time
-	DWORD	pt
+	DWORD	.hwnd
+	DWORD	.message
+	WORD	.wParam
+	WORD	.lParam
+	DWORD	.time
+	DWORD	.pt
 MSG_end:
 
 BYTE wndClass, "WindowClass",0
 BYTE wndTitle, 	"NASM PE MACROS",0
 DWORD hWnd
 DWORD hIns
+DWORD hAccel
 DWORD LastError
 
 ; MessageBox texts
-BYTE error_title, "Error",0
-BYTE help_title, "Help",0
-BYTE help_text, `Demo Applicaton\n\n`,\
-	`Shows Capabilities Of NASM PE MACRO SETS\n\n`,\
-	`Nasm Rocks!\n\n`,\
-	`Author: Seyhmus AKASLAN\n`,\
-	`License: GPL v2`,0
+BYTE title, "NASM PE MACROS", 0
+BYTE text, "HELP menu item pressed", 0
+BYTE text_shift_a, "Shift + A keys pressed.", 0
+BYTE text_control_f5, "Control + F5 keys pressed.", 0
+BYTE text_alt_enter, "Alt + Enter keys pressed.", 0
 
 ; Alternative of "times 100h db 0"
 BYTE buffer[100h]
@@ -135,6 +139,14 @@ WinMain:
 	push dword [VA(hWnd)]
 	call [VA(ShowWindow)]
 
+	; Load Accelerators
+	push ID_ACCELERATOR
+	push dword [VA(hIns)]
+	call [VA(LoadAcceleratorsA)]
+	test eax, eax
+	je .show_error
+	mov [VA(hAccel)], eax
+	
 .msg_loop:
 	push NULL
 	push NULL
@@ -144,16 +156,27 @@ WinMain:
 	
 	cmp eax, 0
 	je .msg_loop_end
+	jl .show_error
+	
+	; Translate Accelerator Messages
+	push VA(MSG)
+	push dword [VA(hAccel)]
+	push dword [VA(hWnd)]
+	call [VA(TranslateAcceleratorA)]
+	test eax, eax
+	jne .next
 	
 	push VA(MSG)
 	call [VA(TranslateMessage)]
 	
 	push VA(MSG)
 	call [VA(DispatchMessageA)]
+.next:
 	jmp .msg_loop
 .msg_loop_end:
 
 .return:
+	mov eax, dword [VA(MSG.wParam)]
 	mov esp, ebp
 	pop ebp
 	ret 16
@@ -173,7 +196,7 @@ WinMain:
 	call [VA(FormatMessageA)]
 	
 	push MB_ICONERROR
-	push VA(error_title)
+	push VA(title)
 	push VA(buffer)
 	push NULL
 	call [VA(MessageBoxA)]
@@ -216,14 +239,19 @@ WinProc:
 	jmp .return
 	
 .command:
-	; MAKEINTRESOURCE (wParam)
 	mov eax, dword [ebp + 16]
-	and eax, 0x0000FFFF
 	
-	cmp eax, IDM_FILE_EXIT
+	; LOWORD (wParam)
+	cmp ax, IDM_FILE_EXIT
 	je .command_exit
-	cmp eax, IDM_FILE_HELP
+	cmp ax, IDM_FILE_HELP
 	je .command_help
+	cmp ax, ID_ACTION_SHIFT_A
+	je .command_shift_a
+	cmp ax, ID_ACTION_CONTROL_F5
+	je .command_control_f5	
+	cmp ax, ID_ACTION_ALT_ENTER
+	je .command_alt_enter
 	jmp .return
 	
 .command_exit:	
@@ -234,8 +262,35 @@ WinProc:
 
 .command_help:	
 	push MB_OK | MB_ICONINFORMATION
-	push VA(help_title)
-	push VA(help_text)
+	push VA(title)
+	push VA(text)
+	push dword [VA(hWnd)]
+	call [VA(MessageBoxA)]
+	xor eax, eax
+	jmp .return
+
+.command_shift_a:
+	push MB_OK | MB_ICONINFORMATION
+	push VA(title)
+	push VA(text_shift_a)
+	push dword [VA(hWnd)]
+	call [VA(MessageBoxA)]
+	xor eax, eax
+	jmp .return	
+	
+.command_control_f5:
+	push MB_OK | MB_ICONINFORMATION
+	push VA(title)
+	push VA(text_control_f5)
+	push dword [VA(hWnd)]
+	call [VA(MessageBoxA)]
+	xor eax, eax
+	jmp .return
+
+.command_alt_enter:
+	push MB_OK | MB_ICONINFORMATION
+	push VA(title)
+	push VA(text_alt_enter)
 	push dword [VA(hWnd)]
 	call [VA(MessageBoxA)]
 	xor eax, eax
@@ -251,6 +306,13 @@ RESOURCE
 			ENDLANG
 		ENDID
 	ENDTYPE
+	TYPE RT_ACCELERATOR
+		ID ID_ACCELERATOR
+			LANG
+				LEAF RVA(accelerator), SIZEOF(accelerator)
+			ENDLANG
+		ENDID
+	ENDTYPE
 ENDRESOURCE
 
 MENU mainmenu
@@ -260,9 +322,17 @@ MENU mainmenu
 	ENDPOPUP
 ENDMENU
 
+
+ACCELERATORTABLE accelerator
+	ACCELERATOR 'A', ID_ACTION_SHIFT_A, FSHIFT
+	ACCELERATOR VK_F5, ID_ACTION_CONTROL_F5, FCONTROL | FVIRTKEY
+	ACCELERATOR VK_RETURN, ID_ACTION_ALT_ENTER, FALT | FVIRTKEY
+	; default key is shift, accelerator for menu item
+	ACCELERATOR 'H', IDM_FILE_HELP
+ENDACCELERATORTABLE
+
 IMPORT
 	LIB kernel32.dll
-		FUNC ExitProcess
 		FUNC GetModuleHandleA
 		FUNC GetLastError
 		FUNC FormatMessageA
@@ -282,10 +352,12 @@ IMPORT
 		FUNC DefWindowProcA
 		FUNC PostQuitMessage
 		FUNC DestroyWindow
+		FUNC LoadAcceleratorsA
+		FUNC TranslateAcceleratorA
 	ENDLIB	
 ENDIMPORT
 
 END
 
 ; Compile
-; nasm -f bin -o window_menu.exe
+; nasm -f bin -o accelerator.exe

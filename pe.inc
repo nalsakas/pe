@@ -2,8 +2,8 @@
 ; Author : Seyhmus AKASLAN
 ; Contact: nalsakas@gmail.com
 ;
-; NASM PE Macro Sets
-; Used for direct output to executable file using only assembler.  
+; NASM PE Macros
+; Used for direct output to executables using only nasm.  
 ; Copyright (C) 2015  Seyhmus AKASLAN
 
 ; This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@
 
 ; Section Name
 ; max 8 chars
-%define SECTIONNAME 'nasmrocks'
+%define SECTIONNAME 'nasm'
 
 ; Subsystem
 ; GUI = 1, CONSOLE = 2, NATIVE = 3
@@ -131,11 +131,11 @@
 %endmacro
 
 %macro PE64 0
-	%error "PE64 doesn't implemented yet :("
+	%error "PE64 isn't implemented yet :("
 %endmacro
 
 %macro DLL64 0
-	%error "DLL64 doesn't implemented yet :("
+	%error "DLL64 isn't implemented yet :("
 %endmacro
 
 %macro START 0
@@ -159,7 +159,6 @@
 	%endif
 	
 	;ALIGN
-	;times (FALIGN - (($ - %$SECTION_START_1) % FALIGN)) db 0
 	BINALIGN FALIGN, %$SECTION_START_1
 	
 	%$SECTION_END_1:
@@ -1066,16 +1065,16 @@
 
 ;##############################################################################
 ; STRINGTABLE Macros
-; STRINGTABLE / STRINGTABLE
+; STRINGTABLE / ENDSTRINGTABLE
 ; SID(String Table Resource ID, String Index in table)
 ;
 ; USAGE:
-; LoadString hInst, SID(ResourceID, 1) --> First string in table 
+; LoadString (hInst, SID(ResourceID, 1)) --> First string in table 
 ;
 ; STRINGTABLE label
 ;   STRING 'this is a string'
 ;   ...
-; STRINGTABLE
+; ENDSTRINGTABLE
 ;;##############################################################################
 
 ; STRINGTABLE MACROS
@@ -1108,6 +1107,56 @@
 	%strlen %%strlen %1
 	WORD %%len, %%strlen
 	WORD %%str, __utf16__(%1)
+%endmacro
+;##############################################################################
+; ACCELERATOR TABLE Macros
+; ACCELERATOR / ENDACCELERATOR
+;
+; USAGE:
+; LoadAccelerators (hInst, Resource ID)
+; ACCELERATOR label
+;   STRING 'this is a string'
+;   ...
+; ENDACCELERATOR
+;;##############################################################################
+%macro ACCELERATORTABLE 1
+	%push accelerator
+	%define %$NAME %1
+	%assign %$COUNT 0
+	%$NAME:
+%endmacro
+
+; %1 = ascii
+; %2 = id
+; %3 = flags | defaults to FSHIFT
+%macro ACCELERATOR 2-3 0
+	%assign %$COUNT %$COUNT + 1
+	
+	%xdefine %$ASCII_%[%$COUNT] %1
+	%xdefine %$ID_%[%$COUNT] %2
+	%xdefine %$FLAGS_%[%$COUNT] %3
+%endmacro
+
+%macro ENDACCELERATORTABLE 0
+	; AccelTableEntries
+	%assign %%i 0
+	%rep %$COUNT
+		%assign %%i %%i + 1
+		
+		; Flag last entry
+		%if %%i == %$COUNT
+			WORD %%flags_%[%%i], %$FLAGS_%[%%i] | 0x0080
+		%else
+			WORD %%flags_%[%%i], %$FLAGS_%[%%i]
+		%endif
+		
+		WORD %%ascii_%[%%i], %$ASCII_%[%%i]
+		WORD %%ID_%[%%i], %$ID_%[%%i]
+		WORD %%padding_%[%%i]
+	%endrep
+	
+	%[%$NAME]_end:
+	%pop accelerator
 %endmacro
 ;##############################################################################
 ; PE HEADER Macros

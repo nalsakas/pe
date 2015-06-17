@@ -2,7 +2,7 @@
 ; Author : Seyhmus AKASLAN
 ; Contact: nalsakas@gmail.com
 ;
-; NASM PE Macro Sets Examples
+; NASM PE Macros Examples
 ; Shows example usage of PE macros
 ; Copyright (C) 2015  Seyhmus AKASLAN
 ;
