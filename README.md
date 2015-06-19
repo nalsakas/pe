@@ -273,9 +273,9 @@ don't put a *STYLE*, dialog uses default styles which are
 
 `WS_POPUP | WS_BORDER | WS_SYSMENU | WS_VISIBLE | DS_SETFONT | WS_CAPTION | DS_NOFAILCREATE`  
 
-There are total 15 kinds of predefined child controls. All of them based on CONTROL  
-macro. These child controls are *DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,  
-AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT,  
+There are total 15 kinds of predefined child controls. All of them based on CONTROL
+macro. These child controls are *DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON,
+AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT, 
 RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX* and *SCROLLBAR*.  
 
 **7) STRINGTABLE MACROS**  
@@ -291,7 +291,7 @@ index of string. SID() macro returns calculated ID of each string in a table.
 ```
 push buffer_size  
 push VA(buffer)  
-push SID(ID_TABLE, 1)        ; loads fisrt string  
+push SID(ID_TABLE, 1)        ; loads first string  
 push dword [VA(hInstance)]  
 call [VA(LoadStringA)]   
 ```
@@ -308,3 +308,20 @@ STRINGTABLE label
   STRING '16th string'  
 ENDSTRINGTABLE  
 ```
+
+**8) ACCELERATORTABLE MACROS**  
+With ACCELERATOR / ENDACCELLERATOR tables you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API.  
+To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table.  
+
+```
+ACCELERATORTABLE accelerator
+   ; %1 = ascii key or virtual key,  %2 = ID of key,  %3 = flags
+   ACCELERATOR 'A', ID_ACTION_SHIFT_A, FSHIFT
+   ACCELERATOR VK_F5, ID_ACTION_CONTROL_F5, FCONTROL | FVIRTKEY
+   ACCELERATOR VK_RETURN, ID_ACTION_ALT_ENTER, FALT | FVIRTKEY
+   
+   ; default flag is shift key
+   ACCELERATOR 'H', IDM_FILE_HELP
+ENDACCELERATORTABLE
+```
+
