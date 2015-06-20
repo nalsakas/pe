@@ -16,7 +16,7 @@ License: GPL v2
 8. [STRINGTABLE MACROS](#STRINGTABLE MACROS)
 9. [ACCELERATORTABLE MACROS](#ACCELERATORTABLE MACROS)
 
-## <a name="INTRODUCTION"></a>INTRODUCTION &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="INTRODUCTION"></a>INTRODUCTION
 
 For a long time I wanted to output *PE32, DLL32, PE64* and *DLL64* formats directly from nasm assembler. Nasm doesn't have support of direct output to executable files or dll files but instead it has support of raw binary output and has advanced macro support. My aim in this project is to use nasm's macro capability to directly output executables. In order to make that happen I need to invent pretty a lot new macros. Some of them are PE header structures, section tables, data directories, resource macros, etc.
 
@@ -136,7 +136,7 @@ END
 
 You can find detailed analysis of user space macros below. Have fun.
 
-## <a name="VA()/RVA() MACROS"></a>VA()/RVA() MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="VA()/RVA() MACROS"></a>VA()/RVA() MACROS
 
 Labels in assembly are offset based. They don't actually contain virtual addresses. *VA()* together with *RVA()* macros are invented to convert offset based labels into virtual addresses.
 
@@ -151,7 +151,7 @@ call label --> call label --> this line doesn't require VA()
 
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
 
-## <a name="IMPORT MACROS"></a>IMPORT MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="IMPORT MACROS"></a>IMPORT MACROS
 
 If you want to use external functions from other libraries in your code use *IMPORT* macro. Import macro has following form.  
 
@@ -169,7 +169,7 @@ ENIMPORT
 There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string
 form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `"call [VA(function_name)]"`.
 
-## <a name="EXPORT MACROS"></a>EXPORT MACROS
+## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
 If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form "libname.dll".
 
@@ -180,7 +180,7 @@ EXPORT module_name
 ENDEXPORT  
 ```
 
-## <a name="RESOURCE MACROS"></a>RESOURCE MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
 Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
 ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format.
@@ -214,7 +214,7 @@ ENDRESOURCE
 ; user defined types of resources doesn't have any special format.  
 ```
 
-## <a name="MENU MACROS"></a>MENU MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="MENU MACROS"></a>MENU MACROS
 
 In order to use menu resources first include one resource with RT_MENU type into resource tree. Than use following *MENU* macro to define your menu.
 
@@ -233,7 +233,7 @@ ENDMENU
 
 *MENU* macros helps tou create menu resources. There are only 2 type of child macros declared inside. One is *MENUITEM* and other is *POPUP/ENDPOPUP*.
 
-## <a name="DIALOG MACROS"></a>DIALOG MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="DIALOG MACROS"></a>DIALOG MACROS
 
 In order to use dialog resources first include one resource with RT_DIALOG type into resource tree. Than use following *DIALOG* macro to define your dialog.
 ```
@@ -259,7 +259,7 @@ You don't need to put *STYLE*, *EXSTYLE*, *FONT* and *CAPTION* macros beneath *D
 
 There are total 15 kinds of predefined child controls. All of them based on CONTROL macro. These child controls are *DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON, AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT, RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX* and *SCROLLBAR*.
 
-## <a name="STRINGTABLE MACROS"></a>STRINGTABLE MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="STRINGTABLE MACROS"></a>STRINGTABLE MACROS
 
 One string table can hold up to 16 strings. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use SID() macro which stands for string ID. This macro excpects
 2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. SID() macro returns calculated ID of each string in a table.
@@ -284,7 +284,7 @@ STRINGTABLE label
 ENDSTRINGTABLE  
 ```
 
-## <a name="ACCELERATORTABLE MACROS"></a>ACCELERATORTABLE MACROS &nbsp; [:top:](#TABLE OF CONTENTS)
+## [:top:](#TABLE OF CONTENTS)<a name="ACCELERATORTABLE MACROS"></a>ACCELERATORTABLE MACROS
 
 With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of accelerator type into resource tree. Than add following table.
 
