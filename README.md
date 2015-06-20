@@ -110,8 +110,9 @@ DIALOG dialog_label, x, y, cx, cy
   EXSTYLE extended styles  ;Optional  
   FONT size, 'face'        ;Optional  
   CAPTION 'Caption Text'   ;Optional  
+  FONT size, 'font face'   ;Optional  
   
-  ; List Controls  
+  ; Controls  
   ; Style and exstyle member of child controls are optional  
   CONTROL 'name', id, class_id, x, y, cx, cy, sytles, exstyles  
   
@@ -238,10 +239,11 @@ ENDMENU
 In order to use dialog resources first include one resource with RT_DIALOG type into resource tree. Than use following *DIALOG* macro to define your dialog.
 ```
 DIALOG label, x, y, cx, cy  
-  STYLE xxx          ; Optional  
-  EXSTYLE xxx        ; Optional  
-  CAPTION 'text'     ; Optional  
-  MENU resource_id   ; Optional  
+  STYLE xxx                ; Optional  
+  EXSTYLE xxx              ; Optional  
+  CAPTION 'text'           ; Optional  
+  MENU resource_id         ; Optional  
+  FONT size, 'font face'   ; Optional
   
   ; Declare controls  
   CONTROL 'text', id, class_id, x, y, cx, cy, optional stye, optional exstyle  
