@@ -122,7 +122,7 @@ END
 
 You can find detailed analysis of user space macros below. Have fun.  
 
-##**1) VA() / RVA() MACROS**  
+##1) VA() / RVA() MACROS  
 Labels in assembly are offset based. They don't actually contain virtual addresses. *VA()* together with *RVA()* macros are invented to convert offset based labels into virtual addresses.
 
 Examples:  
@@ -136,7 +136,7 @@ call label --> call label --> this line doesn't require VA()
 
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires VA() macro.  
 
-##**2) IMPORT MACROS**  
+##2) IMPORT MACROS  
 If you want to use external functions from other libraries in your code use IMPORT macro. Import macro has following form.  
 
 ```
@@ -153,7 +153,7 @@ ENIMPORT
 There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string
 form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `"call [VA(function_name)]"`.  
 
-##**3) EXPORT MACROS:**  
+##3) EXPORT MACROS  
 If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form "libname.dll".  
 
 ```
@@ -163,7 +163,7 @@ EXPORT module_name
 ENDEXPORT  
 ```
 
-##**4) RESOURCE MACROS**  
+##4) RESOURCE MACROS  
 Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
 ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format.  
 
@@ -196,7 +196,7 @@ ENDRESOURCE
 ; user defined types of resources doesn't have any special format.  
 ```
 
-##**5) MENU MACROS**  
+##5) MENU MACROS  
 In order to use menu resources first include one resource with menu type into resource tree. Than use following *MENU* macro to define your menu.
 
 ```
@@ -214,7 +214,7 @@ ENDMENU
 
 *MENU* macros helps tou create menu resources. There are only 2 type of child macros declared inside. One is *MENUITEM* and other is *POPUP/ENDPOPUP*.  
 
-##**6) DIALOG MACROS**  
+##6) DIALOG MACROS  
 In order to use dialog resources first include one resource with dialog type into resource tree. Than use following *DIALOG* macro to define your dialog.
 ```
 DIALOG label, x, y, cx, cy  
@@ -239,7 +239,7 @@ You don't need to put *STYLE*, *EXSTYLE*, *FONT* and *CAPTION* macros beneath *D
 
 There are total 15 kinds of predefined child controls. All of them based on CONTROL macro. These child controls are *DEFPUSHBUTTON, PUSHBUTTON, GROUPBOX, RADIOBUTTON, AUTOCHECKBOX, AUTO3STATE, AUTORADIOBUTTON, PUSHBOX, STATE3, COMBOBOX, LTEXT, RTEXT, CTEXT, CHECKBOX, EDITTEXT, LISTBOX* and *SCROLLBAR*.  
 
-##**7) STRINGTABLE MACROS**  
+##7) STRINGTABLE MACROS  
 One string table can hold up to 16 strings. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use SID() macro which stands for string ID. This macro excpects
 2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. SID() macro returns calculated ID of each string in a table.  
 
@@ -263,8 +263,8 @@ STRINGTABLE label
 ENDSTRINGTABLE  
 ```
 
-##**8) ACCELERATORTABLE MACROS**  
-With ACCELERATOR / ENDACCELLERATOR tables you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API. To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table.  
+##8) ACCELERATORTABLE MACROS  
+With ACCELERATORTABLE macros you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API. To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table.  
 
 ```
 ACCELERATORTABLE accelerator
