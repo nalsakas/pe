@@ -284,7 +284,7 @@ STRINGTABLE label
 ENDSTRINGTABLE  
 ```
 
-## <a href="#table-of-contents">ACCELERATORTABLE MACROS
+## <a href="#table-of-contents"></a>ACCELERATORTABLE MACROS
 
 With ACCELERATORTABLE macros you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API. To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table.
 
