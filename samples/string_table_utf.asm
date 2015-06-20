@@ -33,7 +33,7 @@ PE32
 
 ; Data declarations	
 WORD buffer[100]
-WORD title, __utf16__("String Tables"),0
+WORD title, __utf16__("NASM PE MACROS"),0
 
 START
 	
@@ -76,8 +76,8 @@ RESOURCE
 ENDRESOURCE
 
 STRINGTABLE strtable
-	STRING 'Hello Word 1'
-	STRING "Hello World 2 (ÜGi)"
+	STRING `String Table\n\nHello Word 1`
+	STRING `String Table\n\nHello World 2 (ÜGi)`
 ENDSTRINGTABLE
 
 END

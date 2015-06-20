@@ -25,7 +25,7 @@
 
 PE32
 
-BYTE Title, "PE MACRO SETS",0
+BYTE Title, "NASM PE MACROS",0
 BYTE Text, "It works!",0
 
 START

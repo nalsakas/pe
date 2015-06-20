@@ -31,7 +31,7 @@ PE32
 
 ; Data declarations	
 WORD buffer[100]
-BYTE title, "String Tables",0
+BYTE title, "NASM PE MACROS",0
 
 START
 	
@@ -44,8 +44,8 @@ START
 	
 	push 100 
 	push VA(buffer)
-	;push SID(ID_STRTABLE, 1)
-	push SID(ID_STRTABLE, 2)
+	push SID(ID_STRTABLE, 1)
+	;push SID(ID_STRTABLE, 2)
 	push eax
 	call [VA(LoadStringA)]
 	
@@ -78,8 +78,8 @@ RESOURCE
 ENDRESOURCE
 
 STRINGTABLE strtable
-	STRING 'Hello Word 1'
-	STRING "Hello World 2"
+	STRING `String Table\n\nHello Word 1`
+	STRING `String Table\n\nHello World 2`
 ENDSTRINGTABLE
 
 END
