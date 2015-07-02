@@ -144,12 +144,12 @@ Labels in assembly are offset based. They don't actually contain virtual address
 
 Examples:
 
-```
-push dword [label] --> push dword [VA(label)]  
-mov eax, dword [label] --> mov eax, [VA(label)]  
-call [label] --> call [VA(label)]  
-call label --> call label --> this line doesn't require VA()  
-```
+|Before|-->|After|Description|
+|------|:-------:|-------|-----|
+|push dword [label]|-->|push dword [VA(label)]| |  
+|mov eax, dword [label]|-->|mov eax, [VA(label)]| | 
+|call [label]|-->|call [VA(label)]| |  
+|call label|-->|call label|this line doesn't require VA()|
 
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
 
