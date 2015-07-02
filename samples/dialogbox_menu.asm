@@ -35,7 +35,7 @@
 PE32
 
 ; Data declerations
-BYTE title, "SAMPLE",0
+BYTE title, "NASM PE MACROS",0
 DWORD hIns
 DWORD LastError
 BYTE buffer[100h]
@@ -58,10 +58,11 @@ WinMain:
 	push ID_MENU
 	push dword [VA(hIns)]
 	call [VA(LoadMenuA)]
-	;test eax, eax
-	;je .show_error
+	test eax, eax
+	je .show_error
 	
 	; DialogBox
+	push 0
 	push VA(DlgProc)
 	push 0
 	push ID_DIALOG

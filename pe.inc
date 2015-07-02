@@ -652,13 +652,6 @@
 	%define %$RESOURCE_LEAF_CODEPAGE_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT]%[%$RESOURCE_LANGCOUNT] %3
 %endmacro
 
-; Resource Type: RT_RCDATA, raw data
-%macro FILE 1
-	%1:
-	%defstr %%filename %1
-	incbin %%filename
-	%1_end:
-%endmacro
 ;##############################################################################
 ; MENU Macros
 ; MENU name/ENDMENU
@@ -1157,6 +1150,37 @@
 	
 	%[%$NAME]_end:
 	%pop accelerator
+%endmacro
+
+;##############################################################################
+; BITMAP Macros
+; Includes bitmap file in binary form
+;
+; USAGE:
+; BITMAP label, 'file.bmp'
+;##############################################################################
+; %1 = label
+; %2 = Bitmap file in string form
+%macro BITMAP 2
+	BINALIGN 4, %$IMAGE_DOS_HEADER
+	%1:
+	%ifnstr %2
+		%error %2 parameter must be a string.
+	%endif
+	incbin %2, 14 ; skip bitmap file header
+	%1_end: 
+%endmacro
+
+; %1 = label
+; %2 = file name on file system
+%macro FILE 2
+	BINALIGN 4, %$IMAGE_DOS_HEADER
+	%1:
+	%ifnstr %2
+		%error %2 parameter must be a string.
+	%endif
+	incbin %2
+	%1_end:
 %endmacro
 ;##############################################################################
 ; PE HEADER Macros

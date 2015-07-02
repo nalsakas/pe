@@ -251,7 +251,7 @@ push dword [VA(hInstance)]
 call [VA(LoadStringA)]   
 ```
 
-Strings  in tables are stored as 16-bit unicode strings. That means when you create a buffer you need twice size of a char. In asm that equals size of a word.  
+Strings  in tables are stored as 16-bit unicode strings. That means when you create a buffer you need twice size of a char. In asm that equals size of a word. Sample application is given in samples directory.
 
 ```
 STRINGTABLE label  
@@ -264,7 +264,7 @@ ENDSTRINGTABLE
 ```
 
 ##8) ACCELERATORTABLE MACROS  
-With ACCELERATORTABLE macros you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API. To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table.  
+With ACCELERATORTABLE macros you can include accelerators to your resources. Then you can use them inside asm code with LoadAccelerator API. To start with acceleretors first include an resource of type accelerator into resource tree. Than add following table. Sample application is given in samples directory.
 
 ```
 ACCELERATORTABLE accelerator
@@ -276,4 +276,14 @@ ACCELERATORTABLE accelerator
    ; default flag is shift key
    ACCELERATOR 'H', IDM_FILE_HELP
 ENDACCELERATORTABLE
+```
+
+##9) BITMAP MACRO
+With BITMAP macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with BITMAP macro. Sample application is given in samples directory.
+
+```
+; %1 = label
+; %2 = Bitmap file in string form
+
+BITMAP bitmap1, 'bitmap.bmp'
 ```

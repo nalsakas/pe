@@ -25,9 +25,7 @@
 %include "../windows.inc"
 
 ; Resource ID's
-%define IDM_MAINMENU 1
-%define IDM_FILE_EXIT 11
-%define IDM_FILE_HELP 12
+%define ID_BITMAP_1 1
 
 ; Create 32-bit Windows Executable
 PE32
@@ -43,7 +41,7 @@ WNDCLASSEX:
 	DWORD	.hIcon
 	DWORD	.hCursor
 	DWORD	.hbrBackground, COLOR_WINDOW
-	DWORD	.lpszMenuName, IDM_MAINMENU
+	DWORD	.lpszMenuName
 	DWORD	.lpszClassName, VA(wndClass)
 	DWORD	.hIconSm
 WNDCLASSEX_end:
@@ -57,29 +55,29 @@ MSG:
 	DWORD	pt
 MSG_end:
 
+PAINTSTRUCTURE:
+	DWORD  hdc;
+	BYTE fErase;
+	DWORD rcPaint[4];
+	BYTE fRestore;
+	BYTE fIncUpdate;
+	BYTE rgbReserved[32];
+PAINTSTRUCTURE_end:
+
+
 BYTE wndClass, "WindowClass",0
 BYTE wndTitle, 	"NASM PE MACROS",0
-DWORD hWnd
 DWORD hIns
+DWORD hWnd
 DWORD LastError
-
-; MessageBox texts
-BYTE error_title, "Error",0
-BYTE help_title, "Help",0
-BYTE help_text,\
-	`Demo Applicaton\n\n`,\
-	`Shows Capabilities of NASM PE MACROS`,0
-
-; Alternative of "times 100h db 0"
-BYTE buffer[100h]
+DWORD hDC
+DWORD hBitmap
+DWORD MemoryDC
+BYTE buffer[100]
 
 ; Entry Point
 START
 
-; [ebp + 20] = nShowCmd
-; [ebp + 16] = lpCmdLine
-; [ebp + 12] = hPrevInst
-; [ebp + 8] = hInst
 WinMain:
 	push ebp
 	mov ebp, esp
@@ -171,12 +169,11 @@ WinMain:
 	call [VA(FormatMessageA)]
 	
 	push MB_ICONERROR
-	push VA(error_title)
+	push VA(wndTitle)
 	push VA(buffer)
 	push NULL
 	call [VA(MessageBoxA)]
 	jmp .return
-
 
 ; Window Precedure
 ; [ebp + 20] = lParam
@@ -190,8 +187,8 @@ WinProc:
 	; switch msg 
 	cmp dword [ebp + 12], WM_DESTROY
 	je .destroy
-	cmp dword [ebp + 12], WM_COMMAND
-	je .command
+	cmp dword [ebp + 12], WM_PAINT
+	je .paint
 	jmp .defproc
 
 .return:
@@ -212,51 +209,71 @@ WinProc:
 	call [VA(PostQuitMessage)]
 	xor eax, eax
 	jmp .return
+
+.paint:
+	; BeginPaint
+	push VA(PAINTSTRUCTURE)
+	push dword [ebp + 8]
+	call [VA(BeginPaint)]
+	mov [VA(hDC)], eax
 	
-.command:
-	; MAKEINTRESOURCE (wParam)
-	mov eax, dword [ebp + 16]
-	and eax, 0x0000FFFF
+	; LoadBitmap
+	push ID_BITMAP_1
+	push dword [VA(hIns)]
+	call [VA(LoadBitmapA)]
+	mov [VA(hBitmap)], eax
 	
-	cmp eax, IDM_FILE_EXIT
-	je .command_exit
-	cmp eax, IDM_FILE_HELP
-	je .command_help
-	jmp .return
+	; CreateCompatibleDC
+	push dword [VA(hDC)]
+	call [VA(CreateCompatibleDC)]
+	mov [VA(MemoryDC)], eax
 	
-.command_exit:	
-	push dword [VA(hWnd)]
-	call [VA(DestroyWindow)]
+	; SelectObject
+	push dword [VA(hBitmap)]
+	push dword [VA(MemoryDC)]
+	call [VA(SelectObject)]
+	
+	; Copy Bits
+	push SRCCOPY
+	push 0
+	push 0
+	push dword [VA(MemoryDC)]
+	push 300
+	push 300
+	push 10
+	push 10
+	push dword [VA(hDC)]
+	call [VA(BitBlt)]
+
+	; DeleteDC
+	push dword [VA(MemoryDC)]
+	call [VA(DeleteDC)]
+	
+	; DeleteObject
+	push dword [VA(hBitmap)]
+	call [VA(DeleteObject)]
+	
+	; EndPaint
+	push VA(PAINTSTRUCTURE)
+	push dword [ebp + 8]
+	call [VA(EndPaint)]
+	
 	xor eax, eax
 	jmp .return
-
-.command_help:	
-	push MB_OK | MB_ICONINFORMATION
-	push VA(help_title)
-	push VA(help_text)
-	push dword [VA(hWnd)]
-	call [VA(MessageBoxA)]
-	xor eax, eax
-	jmp .return
-
+	
 
 ; Data Directories
 RESOURCE
-	TYPE RT_MENU
-		ID IDM_MAINMENU
+	TYPE RT_BITMAP
+		ID ID_BITMAP_1
 			LANG
-				LEAF RVA(mainmenu), SIZEOF(mainmenu)
+				LEAF RVA(bitmap1), SIZEOF(bitmap1)
 			ENDLANG
 		ENDID
 	ENDTYPE
 ENDRESOURCE
 
-MENU mainmenu
-	POPUP 'File'
-		MENUITEM 'Exit', IDM_FILE_EXIT
-		MENUITEM 'Help', IDM_FILE_HELP
-	ENDPOPUP
-ENDMENU
+BITMAP bitmap1, 'bitmap.bmp'
 
 IMPORT
 	LIB kernel32.dll
@@ -280,7 +297,18 @@ IMPORT
 		FUNC DefWindowProcA
 		FUNC PostQuitMessage
 		FUNC DestroyWindow
-	ENDLIB	
+		FUNC BeginPaint
+		FUNC EndPaint
+		FUNC LoadBitmapA
+	ENDLIB
+	
+	LIB gdi32.dll
+		FUNC CreateCompatibleDC
+		FUNC BitBlt
+		FUNC DeleteDC
+		FUNC DeleteObject
+		FUNC SelectObject
+	ENDLIB
 ENDIMPORT
 
 END
