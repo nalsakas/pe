@@ -173,7 +173,7 @@ form. This macro turns function names into labels. That labels behaves like addr
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
-If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form "libname.dll".
+If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form libname.dll.
 
 ```
 EXPORT module_name  
