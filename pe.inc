@@ -810,8 +810,8 @@
 %endmacro
 
 %macro CAPTION 1
-	%ifctx dialog
-		%ifnstr %$DIALOG_CAPTION
+	%ifctx dialog	
+		%ifstr %1
 			%define %$DIALOG_CAPTION %1
 		%else
 			%error Caption must be string.

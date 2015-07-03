@@ -189,12 +189,6 @@ WinProc:
 	je .destroy
 	cmp dword [ebp + 12], WM_PAINT
 	je .paint
-	jmp .defproc
-
-.return:
-	mov esp, ebp
-	pop ebp
-	ret 16
 
 .defproc:
 	push dword [ebp + 20]
@@ -202,7 +196,11 @@ WinProc:
 	push dword [ebp + 12]
 	push dword [ebp + 8]
 	call [VA(DefWindowProcA)]
-	jmp .return
+
+.return:
+	mov esp, ebp
+	pop ebp
+	ret 16
 	
 .destroy:
 	push NULL
@@ -233,7 +231,7 @@ WinProc:
 	push dword [VA(MemoryDC)]
 	call [VA(SelectObject)]
 	
-	; Copy Bits
+	; BitBlit
 	push SRCCOPY
 	push 0
 	push 0

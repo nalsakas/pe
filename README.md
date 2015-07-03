@@ -187,7 +187,7 @@ ENDEXPORT
 Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
 ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format.
 
-Example:  
+Example Resource Tree:  
 
 ```
 ; First define resource tree, which has type, id, lang and pointer to actual resources.

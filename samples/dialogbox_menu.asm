@@ -32,6 +32,7 @@
 %define ID_MENU_EXIT 21
 %define ID_STATIC 30
 %define ID_EDIT 40
+
 PE32
 
 ; Data declerations
