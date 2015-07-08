@@ -24,8 +24,6 @@
 
 ;##############################################################################
 ; Utility Functions and Global Definitions
-; ROUNDVS(x,y) rounds size to the multiple of Section Alignment
-; ROUNDFS(x,y) rounds size to the multiple of File Alignment
 ;##############################################################################
 ; Section Alignment is above or equal to the File Alignment
 %define SALIGN 1000h
@@ -187,27 +185,23 @@
 	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
 	%assign %$IMPORT 1
+	%assign %$LIBRARY_COUNT 0
 %endmacro
 
 %macro LIB 1
 	; Count number of LIBs
-	%ifnum %$LIBRARY_COUNT
-		%assign %$LIBRARY_COUNT %$LIBRARY_COUNT + 1
-	%else
-		%assign %$LIBRARY_COUNT 1
-	%endif
+	%assign %$LIBRARY_COUNT %$LIBRARY_COUNT + 1
 	
 	; Get name of LIB
 	%define %$LIBRARY_NAME_%[%$LIBRARY_COUNT] %1
+	
+	; Reset function count of LIB 
+	%assign %$FUNCTION_COUNT 0
 %endmacro
 
 %macro ENDLIB 0
-	%ifnum %$FUNCTION_COUNT
+	%if %$FUNCTION_COUNT > 0
 		%xdefine %$FUNCTION_COUNT_%[%$LIBRARY_COUNT] %$FUNCTION_COUNT
-		bug( %?? '%$FUNCTION_COUNT_%[%$LIBRARY_COUNT]' %$FUNCTION_COUNT_%[%$LIBRARY_COUNT] )
-		
-		%assign %$FUNCTION_COUNT 0
-		bug( %?? '%$FUNCTION_COUNT_%[%$LIBRARY_COUNT]' %$FUNCTION_COUNT_%[%$LIBRARY_COUNT] )
 	%endif
 %endmacro
 
@@ -215,29 +209,15 @@
 	%ifdef %$IMPORT
 		%if %$IMPORT == 1
 			; Count number of functions for each lib	
-			%ifnum %$FUNCTION_COUNT
-				%assign %$FUNCTION_COUNT %$FUNCTION_COUNT + 1
-			%else
-				%assign %$FUNCTION_COUNT 1
-			%endif
-
+			%assign %$FUNCTION_COUNT %$FUNCTION_COUNT + 1
 			%define %$FUNCTION_NAME_%[%$LIBRARY_COUNT]%[%$FUNCTION_COUNT] %1
-
-			bug( %?? '%$FUNCTION_NAME_%[%$LIBRARY_COUNT]%[%$FUNCTION_COUNT]' %[%$LIBRARY_COUNT]%[%$FUNCTION_COUNT] %$FUNCTION_NAME_%[%$LIBRARY_COUNT]%[%$FUNCTION_COUNT] )
 		%endif
 	%endif
 	
 	%ifdef %$EXPORT
 		%if %$EXPORT == 1 
-			%ifnum %$EXPORT_COUNT
-				%assign %$EXPORT_COUNT %$EXPORT_COUNT + 1
-			%else
-				%assign %$EXPORT_COUNT 1
-			%endif
-
+			%assign %$EXPORT_COUNT %$EXPORT_COUNT + 1
 			%define %$EXPORT_NAME_%[%$EXPORT_COUNT] %1
-
-			bug( %?? '%$EXPORT_NAME_%[%$EXPORT_COUNT]' %$EXPORT_COUNT %$EXPORT_NAME_%[%$EXPORT_COUNT] )
 		%endif
 	%endif
 %endmacro
@@ -245,25 +225,22 @@
 %macro ENDIMPORT 0
 	; Prepare IMAGE_IMPORT_BY_NAMEs
 	; For each imported library
-	%ifnum %$LIBRARY_COUNT
+	%if %$LIBRARY_COUNT > 0
 		
 		%assign %%i 0
 		%rep %$LIBRARY_COUNT
 			%assign %%i %%i + 1
 			
-			%ifnum %$FUNCTION_COUNT_%[%%i]
+			%if %$FUNCTION_COUNT_%[%%i] > 0
 			
 				%assign %%j 0
 				%rep %$FUNCTION_COUNT_%[%%i]
 					%assign %%j %%j + 1
-					%define %%FNAME_%[%%i]%[%%j] %$FUNCTION_NAME_%[%%i]%[%%j]
-					%defstr %%FSNAME_%[%%i]%[%%j] %%FNAME_%[%%i]%[%%j]
+					%defstr %%FSNAME_%[%%i]%[%%j] %$FUNCTION_NAME_%[%%i]%[%%j]
 					
 					%%FN_%[%%i]%[%%j]:
 					dw 0
 					db %%FSNAME_%[%%i]%[%%j], 0
-					
-					bug( %?? '%%FSNAME_%[%%i]%[%%j]' %[%%i]%[%%j] %%FSNAME_%[%%i]%[%%j] )
 				%endrep
 			%endif
 		%endrep
@@ -271,14 +248,14 @@
 	
 	; Prepare Original First Thunk
 	; For each imported library
-	%ifnum %$LIBRARY_COUNT
+	%if %$LIBRARY_COUNT > 0
 		%assign %%i 0
 		%rep %$LIBRARY_COUNT
 			%assign %%i %%i + 1
 			
 			%%OFTHUNK_%[%%i]:
 			
-			%ifnum %$FUNCTION_COUNT_%[%%i]
+			%if %$FUNCTION_COUNT_%[%%i] > 0
 				%assign %%j 0
 				%rep %$FUNCTION_COUNT_%[%%i]
 					%assign %%j %%j + 1
@@ -294,14 +271,14 @@
 	
 	; First Thunk, IAT
 	; For each imported library
-	%ifnum %$LIBRARY_COUNT
+	%if %$LIBRARY_COUNT > 0
 			%assign %%i 0
 			%rep %$LIBRARY_COUNT
 				%assign %%i %%i + 1
 				
 				%%FTHUNK_%[%%i]:
 				
-				%ifnum %$FUNCTION_COUNT_%[%%i]
+				%if %$FUNCTION_COUNT_%[%%i] > 0
 					
 					%assign %%j 0
 					%rep %$FUNCTION_COUNT_%[%%i]
@@ -309,8 +286,6 @@
 						
 						%$FUNCTION_NAME_%[%%i]%[%%j]:
 						dd RVA(%%FN_%[%%i]%[%%j])
-						
-						bug( %?? '%$FUNCTION_NAME_%[%%i]%[%%j]' %[%%i]%[%%j] %$FUNCTION_NAME_%[%%i]%[%%j] )
 					%endrep
 				%endif
 				
@@ -321,7 +296,7 @@
 
 	; LIBs names
 	; For each imported library
-	%ifnum %$LIBRARY_COUNT
+	%if %$LIBRARY_COUNT > 0
 		%assign %%i 0
 		%rep %$LIBRARY_COUNT
 			%assign %%i %%i + 1
@@ -330,15 +305,13 @@
 			
 			%%LNAME_%[%%i]:
 			db 	%%LIBNAME_%[%%i], 0
-			
-			bug( %?? '%%LIBNAME_%[%%i]' %%i %%LIBNAME_%[%%i] )
 		%endrep
 	%endif
 	
 	; Fill in IMAGE_IMPORT_DESCRIPTOR structure
 	; For each imported library
 	%$IMAGE_IMPORT_DESCRIPTOR_START:
-	%ifnum %$LIBRARY_COUNT
+	%if %$LIBRARY_COUNT > 0
 		%assign %%i 0
 		%rep %$LIBRARY_COUNT
 			%assign %%i %%i + 1
@@ -371,28 +344,30 @@
 	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
 	%assign %$EXPORT 1
+	
+	; Reset exported function count
+	%assign %$EXPORT_COUNT 0
+	
+	; Get module name from parameter
 	%ifnempty %1
 		%define %$EXPORT_MODULE_NAME %1
 	%else
 		%error EXPORT expects module name as input
 	%endif
+	bug( %?? ExportModuleName '%%Module_Name' %%Module_Name )
 %endmacro
 
 %macro ENDEXPORT 0
-	; Get module name from parameter
-	%ifdef %$EXPORT_MODULE_NAME
-		%ifnstr %$EXPORT_MODULE_NAME
-			%defstr %%substr %$EXPORT_MODULE_NAME
-			BYTE %%Module_Name, %%substr, 0
-		%else
-			BYTE %%Module_Name, %$EXPORT_MODULE_NAME,0
-		%endif
+	; Export module name
+	%ifnstr %$EXPORT_MODULE_NAME
+		%defstr %%substr %$EXPORT_MODULE_NAME
+		BYTE %%Module_Name, %%substr, 0
+	%else
+		BYTE %%Module_Name, %$EXPORT_MODULE_NAME,0
 	%endif
-	bug( %?? ExportModuleName '%%Module_Name' %%Module_Name )
-	
 	
 	%%FUNCTIONS_ADDRESS:
-	%ifnum %$EXPORT_COUNT
+	%if %$EXPORT_COUNT > 0
 		%assign %%i 0
 		
 		%rep %$EXPORT_COUNT
@@ -400,47 +375,39 @@
 		
 			%define %%ENAME_%[%%i] %$EXPORT_NAME_%[%%i]
 			dd RVA(%%ENAME_%[%%i])
-			
-			bug( %?? FunctionsAddress '%%ENAME_%[%%i]' %%i %%ENAME_%[%%i] )
 		%endrep
 	%endif
 	
 	; Names of Exported Functions
-	%ifnum %$EXPORT_COUNT
+	%if %$EXPORT_COUNT > 0
 		%assign %%i 0
 		%rep %$EXPORT_COUNT
 			%assign %%i %%i + 1
-			
-			%define %%FNAME_%[%%i] %$EXPORT_NAME_%[%%i]
-			%defstr %%FNNAME_%[%%i] %%FNAME_%[%%i]
+
+			%defstr %%FNNAME_%[%%i] %$EXPORT_NAME_%[%%i]
 			
 			%%FN_%[%%i]:
 			db %%FNNAME_%[%%i],0
-			
-			bug( %?? Names '%%FNNAME_%[%%i]' %%i %%FNNAME_%[%%i] )
 		%endrep
 	%endif
 	
 	; Names Array
 	%%NAMES_ADDRESS:
-	%ifnum %$EXPORT_COUNT
+	%if %$EXPORT_COUNT > 0
 		%assign %%i 0
 		%rep %$EXPORT_COUNT
 			%assign %%i %%i + 1
 			dd RVA(%%FN_%[%%i])
-			
-			bug( %?? NamesAddress '%%FN_%[%%i]' %%i %%FN_%[%%i] )
 		%endrep
 	%endif	
 	
 	; Ordinals Array
 	%%ORDINALS_ADDRESS:
-	%ifnum %$EXPORT_COUNT
+	%if %$EXPORT_COUNT > 0
 		%assign %%i 0 
 		%rep %$EXPORT_COUNT
 			dw %%i
 			%assign %%i %%i + 1
-			bug( %?? Ordinals '%%i' %%i )
 		%endrep
 	%endif
 	
@@ -482,7 +449,7 @@
 ; ENDRESOURCE
 ;
 ; actual_resource:
-; (MENU/DAALOG/STRINGTABLE, Raw, User Defined etc.)
+; (MENU/DIALOG/STRINGTABLE, Raw, User Defined etc.)
 ;
 ; Actual resources may have special structures like string tables, menus
 ; and dialogs. They may also have no structure at all like a raw data or
@@ -584,22 +551,12 @@
 	%ifnnum %1
 		%error %1 is not a number. %?? macro expects number parameter.
 	%endif
-
 	%assign %$RESOURCE_TYPECOUNT %$RESOURCE_TYPECOUNT + 1
-
 	%xdefine %$RESOURCE_TYPEID_%[%$RESOURCE_TYPECOUNT] %1
-	
-	; Debug
-	bug( '%$RESOURCE_TYPECOUNT' %$RESOURCE_TYPECOUNT )
-	bug( '%$RESOURCE_TYPEID_%[%$RESOURCE_TYPECOUNT]' %$RESOURCE_TYPEID_%[%$RESOURCE_TYPECOUNT] )
 %endmacro
 
 %macro ENDTYPE 0
-	%xdefine %$RESOURCE_IDCOUNT_OF_%$RESOURCE_TYPECOUNT %$RESOURCE_IDCOUNT
-	
-	;Debug
-	bug( %?? '%$RESOURCE_TYPECOUNT' %$RESOURCE_TYPECOUNT '%$RESOURCE_IDCOUNT' %$RESOURCE_IDCOUNT )
-	
+	%xdefine %$RESOURCE_IDCOUNT_OF_%$RESOURCE_TYPECOUNT %$RESOURCE_IDCOUNT	
 	%assign %$RESOURCE_IDCOUNT 0
 %endmacro
 
@@ -607,22 +564,12 @@
 	%ifnnum %1
 		%error %1 is not a number. %?? macro expects number parameter.
 	%endif
-
 	%assign %$RESOURCE_IDCOUNT %$RESOURCE_IDCOUNT + 1
-
 	%xdefine %$RESOURCE_ID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT] %1
-	
-	; Debug
-	bug( '%$RESOURCE_IDCOUNT' %$RESOURCE_IDCOUNT )
-	bug( '%$RESOURCE_ID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT]' %$RESOURCE_ID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT] )	
 %endmacro
 
 %macro ENDID 0
 	%xdefine %$RESOURCE_LANGCOUNT_OF_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT] %$RESOURCE_LANGCOUNT
-	
-	;Debug
-	bug( %?? '%$RESOURCE_IDCOUNT' %$RESOURCE_IDCOUNT '%$RESOURCE_LANGCOUNT' %$RESOURCE_LANGCOUNT )
-	
 	%assign %$RESOURCE_LANGCOUNT 0
 %endmacro
 
@@ -632,15 +579,10 @@
 	%ifnnum %1
 		%error %1 is not a number. %?? macro expects number parameter.
 	%endif
-	
 	%assign %$RESOURCE_LANGCOUNT %$RESOURCE_LANGCOUNT + 1
 	
 	%assign %%language_id (%2 << 10) | %1
 	%xdefine %$RESOURCE_LANGID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT]%[%$RESOURCE_LANGCOUNT] %%language_id
-	
-	; Debug
-	bug( '%$RESOURCE_LANGCOUNT' %$RESOURCE_LANGCOUNT )
-	bug( '%$RESOURCE_LANGID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT]%[%$RESOURCE_LANGCOUNT]' %$RESOURCE_LANGID_%[%$RESOURCE_TYPECOUNT]%[%$RESOURCE_IDCOUNT]%[%$RESOURCE_LANGCOUNT]	)
 %endmacro
 
 %macro ENDLANG 0
@@ -749,12 +691,10 @@
 		%if %[%$MENU_NAME]_%[%%i]_TYPE == 1
 			WORD %%fItemFlags_%[%%i], %[%$MENU_NAME]_%[%%i]_FLAGS | %[%$MENU_NAME]_%[%%i]_LAST | %[%$MENU_NAME]_%[%%i]_POPUP
 			WORD %%szItemText_%[%%i], __utf16__(%[%$MENU_NAME]_%[%%i]_NAME),0
-			;bug(%?? '%[%%i]' %[%%i] %[%$MENU_NAME]_%[%%i]_NAME)
 		%else
 			WORD %%fItemFlags_%[%%i], %[%$MENU_NAME]_%[%%i]_FLAGS | %[%$MENU_NAME]_%[%%i]_LAST | %[%$MENU_NAME]_%[%%i]_POPUP
 			WORD %%wMenuID_%[%%i], %[%$MENU_NAME]_%[%%i]_ID
 			WORD %%szItemText_%[%%i], __utf16__(%[%$MENU_NAME]_%[%%i]_NAME),0
-			;bug(%?? '%[%%i]' %[%%i] %[%$MENU_NAME]_%[%%i]_NAME)
 		%endif
 	%endrep
 	
@@ -1162,7 +1102,7 @@
 ; %1 = label
 ; %2 = Bitmap file in string form
 %macro BITMAP 2
-	BINALIGN 4, %$IMAGE_DOS_HEADER
+	;BINALIGN 4, %$IMAGE_DOS_HEADER
 	%1:
 	%ifnstr %2
 		%error %2 parameter must be a string.
@@ -1174,13 +1114,96 @@
 ; %1 = label
 ; %2 = file name on file system
 %macro FILE 2
-	BINALIGN 4, %$IMAGE_DOS_HEADER
+	;BINALIGN 4, %$IMAGE_DOS_HEADER
 	%1:
 	%ifnstr %2
 		%error %2 parameter must be a string.
 	%endif
 	incbin %2
 	%1_end:
+%endmacro
+;##############################################################################
+; ICONGROUP / ENDICONGROUP Macros
+; 
+;
+; USAGE:
+; ICONGROUP 
+;    ICON label, 'filename', ID_RESOURCE
+;    ....
+; ENDICONGROUP
+;##############################################################################
+; %1 = label
+%macro ICONGROUP 1
+	%push icongroup
+	%define %$GROUP_NAME %1
+	%assign %$ICON_COUNT 0
+	
+	%$GROUP_NAME:
+%endmacro
+
+%macro ENDICONGROUP 0
+	%if %$ICON_COUNT > 0
+	
+		;GRPICONDIR
+		WORD %%idReserved
+		WORD %%idType, 1
+		WORD %%idCount, %$ICON_COUNT
+		
+		%assign %%i 0
+		%rep %$ICON_COUNT
+			%assign %%i %%i + 1
+			
+			;%%bWidth_%%i:
+			incbin %$ICON_FILENAME_%[%%i], 18, 1
+			
+			;%%bHeight_%%i:
+			incbin %$ICON_FILENAME_%[%%i], 22, 1
+			
+			;%%bColorCount_%%i:
+			db 0
+			
+			;%%bReserved_%%i:
+			db 0
+			
+			;%%wPlanes_%%i:
+			incbin %$ICON_FILENAME_%[%%i], 26, 2
+			
+			;%%wBitCount_%%i:
+			incbin %$ICON_FILENAME_%[%%i], 28, 2
+			
+			;%%dwBytesInRes_%%i:
+			incbin %$ICON_FILENAME_%[%%i], 34, 4
+			
+			;%%resID_%%i:
+			dw %$ICON_ID_%[%%i]
+			
+			;align
+			;dw 0
+		%endrep
+	
+		%assign %%j 0
+		%rep %$ICON_COUNT
+			%assign %%j %%j + 1
+			BITMAP %$ICON_LABEL_%[%%j], %$ICON_FILENAME_%[%%j]
+		%endrep
+	%endif	
+	
+	%[%$GROUP_NAME]_end:
+	%pop icongroup
+%endmacro
+
+; %1 = label
+; %2 = 'filename'
+; %3 = Resource ID
+%macro ICON 3
+	%ifctx icongroup
+		%assign %$ICON_COUNT %$ICON_COUNT + 1
+		%define %$ICON_LABEL_%[%$ICON_COUNT] %1
+		%define %$ICON_FILENAME_%[%$ICON_COUNT] %2
+		%define %$ICON_ID_%[%$ICON_COUNT] %3
+	%else
+		%error "ICON macro can only be used in ICONGROUP macro."
+	%endif
 %endmacro
 ;##############################################################################
 ; PE HEADER Macros

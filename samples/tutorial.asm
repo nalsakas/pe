@@ -44,7 +44,7 @@ DWORD hDCStatic
 DWORD hBitmap
 DWORD hBitmapMem
 
-; Window Structures
+; Windows Structures
 SRECT:
 	DWORD .left
 	DWORD .top
@@ -129,9 +129,12 @@ DlgProc:
 	push SIZEOF(SBITMAP)
 	push dword [VA(hBitmap)]
 	call [VA(GetObjectA)]
+	
+	mov eax, 1	
+	jmp .return
 
 .paint:
-	; Child DC
+	; DC Static
 	push dword [VA(hStatic)]
 	call [VA(GetDC)]
 	mov [VA(hDCStatic)], eax
@@ -226,7 +229,7 @@ IMPORT
 	LIB user32.dll
 		FUNC DialogBoxParamA
 		FUNC EndDialog
-		FUNC SendMessageA
+		FUNC SendDlgItemMessageA
 		FUNC LoadBitmapA
 		FUNC GetDlgItem
 		FUNC GetDC
