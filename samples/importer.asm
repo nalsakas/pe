@@ -28,7 +28,7 @@ PE32
 START
 	; Call exported function of sample3.dll created earlier
 	call [VA(ExportMe)]
-	ret 12
+	ret
 
 IMPORT
 	LIB exporter.dll

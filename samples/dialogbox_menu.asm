@@ -77,7 +77,7 @@ WinMain:
 .return:
 	mov esp, ebp
 	pop ebp
-	ret 16	
+	ret
 
 	
 ; Show Error Message and Exit
@@ -120,16 +120,14 @@ DlgProc:
 	je .destroy
 	cmp dword [ebp + 12], WM_COMMAND
 	je .command	
-	jmp .default
+
+.default:
+	xor eax, eax
 	
 .return:
 	mov esp, ebp
 	pop ebp	
 	ret 16
-
-.default:
-	xor eax, eax
-	jmp .return
 
 .init:
 	mov eax, 1

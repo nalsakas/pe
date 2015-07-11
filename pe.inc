@@ -32,7 +32,10 @@
 %define FALIGN 200h 
 
 ; Image Base
-%define IMAGEBASE 400000h
+%define PE32_IMAGEBASE 400000h
+%define DLL32_IMAGEBASE 10000000h
+%define PE64_IMAGEBASE 400000h
+%define DLL64_IMAGEBASE 10000000h
 
 ; Section Name
 ; max 8 chars
@@ -42,27 +45,26 @@
 ; GUI = 1, CONSOLE = 2, NATIVE = 3
 %define SUBSYSTEM 1
 
-; Round Functions
-%define ROUNDVS(x,y) ((x - y)/SALIGN + 1)*SALIGN
-%define ROUNDFS(x,y) ((x - y)/FALIGN + 1)*FALIGN
+; Stack and Heap Sizes
+%define PE32_SizeOfStackReserve 0
+%define PE32_SizeOfStackCommit 0
+%define PE32_SizeOfHeapReserve 0
+%define PE32_SizeOfHeapCommit 0
 
-; VA (Virtual Address) function
-%define VA(x)	x - %$SECTION_START_1 + ROUNDVS(%$IMAGE_SECTION_HEADER_END, %$IMAGE_DOS_HEADER) + IMAGEBASE
+%define DLL32_SizeOfStackReserve 0
+%define DLL32_SizeOfStackCommit 0
+%define DLL32_SizeOfHeapReserve 0
+%define DLL32_SizeOfHeapCommit 0
 
-; RVA (Relative Virtual Address) function
-%define RVA(x) VA(x) - IMAGEBASE 
+%define PE64_SizeOfStackReserve 0
+%define PE64_SizeOfStackCommit 0
+%define PE64_SizeOfHeapReserve 0
+%define PE64_SizeOfHeapCommit 0
 
-; SIZEOF()
-%define SIZEOF(x) x%+_end  - x 
-
-; ALIGNMENT
-; Fills gaps with 0s
-; %1 = Size of alignment
-; %2 = Align realtive to label
-%macro BINALIGN 2
-	times (((%1) - (($ - (%2)) % (%1))) % (%1)) db 0
-%endmacro
-
+%define DLL64_SizeOfStackReserve 0
+%define DLL64_SizeOfStackCommit 0
+%define DLL64_SizeOfHeapReserve 0 
+%define DLL64_SizeOfHeapCommit 0 
 ;##############################################################################
 ; DEBUG Macros
 ; 
@@ -117,9 +119,6 @@
 	BITS 32
 	%push dll32
 	
-	; Override Global Image Base
-	%define IMAGEBASE 10000000h
-	
 	IMAGE_DOS_HEADER
 	IMAGE_NT_SIGNATURE
 	IMAGE_FILE_HEADER
@@ -129,11 +128,27 @@
 %endmacro
 
 %macro PE64 0
-	%error "PE64 isn't implemented yet :("
+	BITS 64
+	%push pe64
+	
+	IMAGE_DOS_HEADER
+	IMAGE_NT_SIGNATURE
+	IMAGE_FILE_HEADER
+	IMAGE_OPTIONAL_HEADER
+	IMAGE_DATA_DIRECTORY
+	IMAGE_SECTION_HEADER	
 %endmacro
 
 %macro DLL64 0
-	%error "DLL64 isn't implemented yet :("
+	BITS 64
+	%push dll64
+
+	IMAGE_DOS_HEADER
+	IMAGE_NT_SIGNATURE
+	IMAGE_FILE_HEADER
+	IMAGE_OPTIONAL_HEADER
+	IMAGE_DATA_DIRECTORY
+	IMAGE_SECTION_HEADER
 %endmacro
 
 %macro START 0
@@ -164,6 +179,27 @@
 	
 	; pops pe32, dll32, etc.
 	%pop
+%endmacro
+
+; Round Functions
+%define ROUNDVS(x,y) ((x - y)/SALIGN + 1)*SALIGN
+%define ROUNDFS(x,y) ((x - y)/FALIGN + 1)*FALIGN
+
+; VA (Virtual Address) function
+%define VA(x)	x - %$SECTION_START_1 + ROUNDVS(%$IMAGE_SECTION_HEADER_END, %$IMAGE_DOS_HEADER) + IMAGEBASE
+
+; RVA (Relative Virtual Address) function
+%define RVA(x) VA(x) - IMAGEBASE 
+
+; SIZEOF()
+%define SIZEOF(x) x%+_end  - x 
+
+; ALIGNMENT
+; Fills gaps with 0s
+; %1 = Size of alignment
+; %2 = Align realtive to label
+%macro BINALIGN 2
+	times (((%1) - (($ - (%2)) % (%1))) % (%1)) db 0
 %endmacro
 
 ;##############################################################################
@@ -260,12 +296,29 @@
 				%rep %$FUNCTION_COUNT_%[%%i]
 					%assign %%j %%j + 1
 					
-					dd RVA(%%FN_%[%%i]%[%%j])
+					%ifctx pe32
+						dd RVA(%%FN_%[%%i]%[%%j])
+					%elifctx dll32
+						dd RVA(%%FN_%[%%i]%[%%j])
+					%elifctx pe64
+						dq RVA(%%FN_%[%%i]%[%%j])
+					%elifctx dll64
+						dq RVA(%%FN_%[%%i]%[%%j])
+					%endif
+					
 				%endrep
 			%endif
 			
 			; Zero padding
-			dd 0
+			%ifctx pe32
+				dd 0
+			%elifctx dll32
+				dd 0
+			%elifctx pe64
+				dq 0
+			%elifctx dll64
+				dq 0
+			%endif
 		%endrep
 	%endif
 	
@@ -285,12 +338,30 @@
 						%assign %%j %%j + 1
 						
 						%$FUNCTION_NAME_%[%%i]%[%%j]:
-						dd RVA(%%FN_%[%%i]%[%%j])
+						
+						%ifctx pe32
+							dd RVA(%%FN_%[%%i]%[%%j])
+						%elifctx dll32
+							dd RVA(%%FN_%[%%i]%[%%j])
+						%elifctx pe64
+							dq RVA(%%FN_%[%%i]%[%%j])
+						%elifctx dll64
+							dq RVA(%%FN_%[%%i]%[%%j])
+						%endif						
+						
 					%endrep
 				%endif
 				
 				; Zero padding
-				dd 0
+				%ifctx pe32
+					dd 0
+				%elifctx dll32
+					dd 0
+				%elifctx pe64
+					dq 0
+				%elifctx dll64
+					dq 0
+				%endif	
 			%endrep
 	%endif
 
@@ -1265,10 +1336,10 @@
 		%define %%Mac %%IMAGE_FILE_MACHINE_I386
 	%elifctx dll32
 		%define %%Mac %%IMAGE_FILE_MACHINE_I386
-	;%elifctx pe64
-	;	%define %%Mac %%IMAGE_FILE_MACHINE_IA64
-	;%elifctx dll64
-	;	%define %%Mac %%IMAGE_FILE_MACHINE_IA64
+	%elifctx pe64
+		%define %%Mac %%IMAGE_FILE_MACHINE_AMD64
+	%elifctx dll64
+		%define %%Mac %%IMAGE_FILE_MACHINE_AMD64
 	%endif 
 	
 	; Characteristics
@@ -1280,10 +1351,10 @@
 		%define %%Character %%IMAGE_FILE_32BIT_MACHINE|%%IMAGE_FILE_EXECUTABLE_IMAGE
 	%elifctx dll32
 		%define %%Character %%IMAGE_FILE_32BIT_MACHINE|%%IMAGE_FILE_DLL|%%IMAGE_FILE_EXECUTABLE_IMAGE
-	;%elifctx pe64
-	;	%define %%Character
-	;%elifctx dll64
-	;	%define %%Character
+	%elifctx pe64
+		%define %%Character %%IMAGE_FILE_EXECUTABLE_IMAGE
+	%elifctx dll64
+		%define %%Character %%IMAGE_FILE_DLL|%%IMAGE_FILE_EXECUTABLE_IMAGE
 	%endif
 	
 	; File Header
@@ -1299,17 +1370,22 @@
 %macro IMAGE_OPTIONAL_HEADER 0
 	%$IMAGE_OPTIONAL_HEADER:
 	
-	;Magic
+	; Magic and IMAGEBASE
 	%assign %%IMAGE_NT_OPTIONAL_HDR32_MAGIC 0x10b
 	%assign %%IMAGE_NT_OPTIONAL_HDR64_MAGIC 0x20b
+	
 	%ifctx pe32
 		%define %%Magik %%IMAGE_NT_OPTIONAL_HDR32_MAGIC
+		%define IMAGEBASE PE32_IMAGEBASE
 	%elifctx dll32
 		%define %%Magik %%IMAGE_NT_OPTIONAL_HDR32_MAGIC
+		%define IMAGEBASE DLL32_IMAGEBASE
 	%elifctx pe64
 		%define %%Magik %%IMAGE_NT_OPTIONAL_HDR64_MAGIC
+		%define IMAGEBASE PE64_IMAGEBASE
 	%elifctx dll64
 		%define %%Magik %%IMAGE_NT_OPTIONAL_HDR64_MAGIC
+		%define IMAGEBASE DLL64_IMAGEBASE
 	%endif
 	
 	;Subsystem
@@ -1339,8 +1415,17 @@
 	DWORD   %%SizeOfUninitializedData
 	DWORD   %%AddressOfEntryPoint, RVA(%$ENTRY_POINT)
 	DWORD   %%BaseOfCode
-	DWORD   %%BaseOfData
-	DWORD   %%ImageBase, IMAGEBASE
+	%ifctx pe32
+		DWORD   %%BaseOfData1
+		DWORD   %%ImageBase1, IMAGEBASE
+	%elifctx dll32
+		DWORD   %%BaseOfData1
+		DWORD   %%ImageBase2, IMAGEBASE
+	%elifctx pe64
+		QWORD   %%ImageBase3, IMAGEBASE
+	%elifctx dll64
+		QWORD   %%ImageBase4, IMAGEBASE
+	%endif
 	DWORD   %%SectionAlignment, SALIGN
 	DWORD   %%FileAlignment, FALIGN
 	WORD    %%MajorOperatingSystemVersion, 4
@@ -1355,10 +1440,27 @@
 	DWORD   %%CheckSum
 	WORD    %%Subsystem, %%Subsys
 	WORD    %%DllCharacteristics
-	DWORD   %%SizeOfStackReserve
-	DWORD   %%SizeOfStackCommit
-	DWORD   %%SizeOfHeapReserve
-	DWORD   %%SizeOfHeapCommit
+	%ifctx pe32
+		DWORD   %%SizeOfStackReserve1, PE32_SizeOfStackReserve
+		DWORD   %%SizeOfStackCommit1, PE32_SizeOfStackCommit
+		DWORD   %%SizeOfHeapReserve1, PE32_SizeOfHeapReserve
+		DWORD   %%SizeOfHeapCommit1, PE32_SizeOfHeapCommit
+	%elifctx dll32
+		DWORD   %%SizeOfStackReserve2, DLL32_SizeOfStackReserve 
+		DWORD   %%SizeOfStackCommit2, DLL32_SizeOfStackCommit
+		DWORD   %%SizeOfHeapReserve2, DLL32_SizeOfHeapReserve
+		DWORD   %%SizeOfHeapCommit2, DLL32_SizeOfHeapCommit
+	%elifctx pe64
+		QWORD   %%SizeOfStackReserve3, PE64_SizeOfStackReserve
+		QWORD   %%SizeOfStackCommit3, PE64_SizeOfStackCommit
+		QWORD   %%SizeOfHeapReserve3, PE64_SizeOfHeapReserve
+		QWORD   %%SizeOfHeapCommit3, PE64_SizeOfHeapCommit
+	%elifctx dll64
+		QWORD   %%SizeOfStackReserve4, DLL64_SizeOfStackReserve
+		QWORD   %%SizeOfStackCommit4, DLL64_SizeOfStackCommit
+		QWORD   %%SizeOfHeapReserve4, DLL64_SizeOfHeapReserve
+		QWORD   %%SizeOfHeapCommit4, DLL64_SizeOfHeapCommit		
+	%endif	
 	DWORD   %%LoaderFlags
 	DWORD   %%NumberOfRvaAndSizes,10h
 %endmacro
@@ -1489,7 +1591,6 @@
 	DWORD   %%Characteristics, %$SECTION_CHARACTERISTICS_1
 
 	;ALIGN
-	;times (FALIGN - (($ - %$IMAGE_DOS_HEADER) % FALIGN)) db 0
 	BINALIGN FALIGN, %$IMAGE_DOS_HEADER
 	
 	%$IMAGE_SECTION_HEADER_END:
@@ -1630,5 +1731,48 @@
 		%endif
 	%else
 		db %2
+	%endif
+%endmacro
+
+%macro QWORD 1-2+ 0h
+	%defstr %%label %1
+	%strlen %%len %%label
+
+	%assign %%i 1
+	%rep %%len 
+		%substr %%c %%label %%i
+
+		%if %%c == '['
+			%define %%array
+			%assign %%start %%i + 1
+		%endif
+
+		%if %%c == ']'
+			%assign %%end %%i
+		%endif
+
+		%assign %%i %%i + 1
+	%endrep
+
+	%ifdef %%array
+	    %substr %%sublabel %%label 1,%%start-2
+	    %deftok toklabel %%sublabel 
+	    toklabel:
+	%else
+	    %deftok toklabel %%label 
+	    toklabel:
+	%endif
+
+	%ifdef  %%array
+		%assign %%lenght %%end - %%start
+		%substr %%number %%label %%start, %%lenght
+		%deftok %%number %%number
+		%ifnum %%number
+			times %%number dq %2
+		%else
+			%error %?? number expected between array [] parantesis. 
+		%endif
+	%else
+		dq %2
 	%endif
 %endmacro

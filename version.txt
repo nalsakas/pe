@@ -1,3 +1,9 @@
+#VERSION 0.6, 11/07/2015
+- PE64 support added.
+- DLL64 support added.
+- Tutorial added.
+- Clean up made in pe.inc
+
 #VERSION 0.5, 02/07/2015
 - BITMAP resource support added.
 

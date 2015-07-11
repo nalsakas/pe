@@ -63,7 +63,6 @@ SBITMAP:
 SBITMAP_end:
 
 START
-
 	push ebp
 	mov ebp, esp
 
@@ -83,8 +82,7 @@ START
 	; return
 	mov esp, ebp
 	pop ebp
-	ret 16
-
+	ret
 
 ; Dialog Procedure
 ; [ebp + 20] = lParam

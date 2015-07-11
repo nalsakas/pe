@@ -23,45 +23,26 @@
 ;##############################################################################
 %include "../pe.inc"
 
-DLL32
-
-BYTE Title, "PE MACRO SETS",0
-BYTE Text, "Exports works!",0
+PE64
 
 START
 
-; [ebp + 16] Reserved
-; [ebp + 12] Reason
-; [ebp +  8] HANDLE hModule
-DllMain:
-	mov eax, 1
+	push rbp
+	mov rbp, rsp
+	
+	call [VA(MyExport)]
+	
+	mov rsp, rbp
+	pop rbp
 	ret
-	
-ExportMe:
-	push ebp
-	mov ebp, esp
-	
-	push 0
-	push VA(Title)
-	push VA(Text)
-	push 0
-	call [VA(MessageBoxA)]
-	
-	mov esp, ebp
-	pop ebp
-	ret 
-
-EXPORT exporter.dll
-	FUNC ExportMe
-ENDEXPORT
 
 IMPORT
-	LIB user32.dll
-		FUNC MessageBoxA
+	LIB 64_exporter.dll
+		FUNC MyExport
 	ENDLIB
 ENDIMPORT
 
 END
 
 ; Compile
-; nasm -f bin -o exporter.dll
+; nasm -f bin -o importer.exe

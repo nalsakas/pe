@@ -152,7 +152,7 @@ WinMain:
 .return:
 	mov esp, ebp
 	pop ebp
-	ret 16
+	ret
 	
 ; Show Error Message and Exit
 .show_error:

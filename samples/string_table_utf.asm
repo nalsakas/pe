@@ -53,7 +53,7 @@ START
 	push NULL
 	call [VA(MessageBoxW)]
 	
-	ret 16
+	ret
 
 IMPORT
 	LIB user32.dll

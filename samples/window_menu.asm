@@ -106,9 +106,6 @@ WinMain:
 	push VA(WNDCLASSEX)
 	call [VA(RegisterClassExA)]
 	
-	cmp eax, 0
-	je	.show_error
-	
 	; Create Window
 	push NULL
 	push dword [VA(hIns)]
@@ -124,9 +121,6 @@ WinMain:
 	push NULL	
 	call [VA(CreateWindowExA)]
 	mov [VA(hWnd)], eax
-	
-	cmp eax, 0
-	je .show_error
 	
 	; Show Window
 	push dword [ebp + 20]
@@ -154,29 +148,8 @@ WinMain:
 .return:
 	mov esp, ebp
 	pop ebp
-	ret 16
+	ret
 	
-; Show Error Message and Exit
-.show_error:
-	call [VA(GetLastError)]
-	mov [VA(LastError)], eax
-	
-	push NULL
-	push 200h
-	push VA(buffer)
-	push NULL
-	push eax
-	push NULL
-	push FORMAT_MESSAGE_FROM_SYSTEM
-	call [VA(FormatMessageA)]
-	
-	push MB_ICONERROR
-	push VA(error_title)
-	push VA(buffer)
-	push NULL
-	call [VA(MessageBoxA)]
-	jmp .return
-
 
 ; Window Precedure
 ; [ebp + 20] = lParam
@@ -192,12 +165,6 @@ WinProc:
 	je .destroy
 	cmp dword [ebp + 12], WM_COMMAND
 	je .command
-	jmp .defproc
-
-.return:
-	mov esp, ebp
-	pop ebp
-	ret 16
 
 .defproc:
 	push dword [ebp + 20]
@@ -205,7 +172,11 @@ WinProc:
 	push dword [ebp + 12]
 	push dword [ebp + 8]
 	call [VA(DefWindowProcA)]
-	jmp .return
+
+.return:
+	mov esp, ebp
+	pop ebp
+	ret 16
 	
 .destroy:
 	push NULL
@@ -214,13 +185,11 @@ WinProc:
 	jmp .return
 	
 .command:
-	; MAKEINTRESOURCE (wParam)
 	mov eax, dword [ebp + 16]
-	and eax, 0x0000FFFF
 	
-	cmp eax, IDM_FILE_EXIT
+	cmp ax, IDM_FILE_EXIT
 	je .command_exit
-	cmp eax, IDM_FILE_HELP
+	cmp ax, IDM_FILE_HELP
 	je .command_help
 	jmp .return
 	

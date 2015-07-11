@@ -179,7 +179,7 @@ WinMain:
 	mov eax, dword [VA(MSG.wParam)]
 	mov esp, ebp
 	pop ebp
-	ret 16
+	ret
 	
 ; Show Error Message and Exit
 .show_error:
@@ -217,12 +217,6 @@ WinProc:
 	je .destroy
 	cmp dword [ebp + 12], WM_COMMAND
 	je .command
-	jmp .defproc
-
-.return:
-	mov esp, ebp
-	pop ebp
-	ret 16
 
 .defproc:
 	push dword [ebp + 20]
@@ -230,8 +224,12 @@ WinProc:
 	push dword [ebp + 12]
 	push dword [ebp + 8]
 	call [VA(DefWindowProcA)]
-	jmp .return
-	
+
+.return:
+	mov esp, ebp
+	pop ebp
+	ret 16
+
 .destroy:
 	push NULL
 	call [VA(PostQuitMessage)]

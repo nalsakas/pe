@@ -21,47 +21,44 @@
 ; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 ; MA  02110-1301, USA.
 ;##############################################################################
-%include "../pe.inc"
+%include '../pe.inc'
 
-DLL32
+DLL64
 
-BYTE Title, "PE MACRO SETS",0
-BYTE Text, "Exports works!",0
+; Data declarations here
+BYTE Title, "NASM PE MACROS",0
+BYTE Text, "64-bit exports works!",0
 
 START
-
-; [ebp + 16] Reserved
-; [ebp + 12] Reason
-; [ebp +  8] HANDLE hModule
-DllMain:
-	mov eax, 1
+	mov rax, 1
 	ret
 	
-ExportMe:
-	push ebp
-	mov ebp, esp
-	
-	push 0
-	push VA(Title)
-	push VA(Text)
-	push 0
-	call [VA(MessageBoxA)]
-	
-	mov esp, ebp
-	pop ebp
-	ret 
+MyExport:
+; instructions
 
-EXPORT exporter.dll
-	FUNC ExportMe
-ENDEXPORT
+	push rbp
+	mov rbp, rsp
 
+	; Fastcall callling convention
+	mov r9, 0
+	mov r8, VA(Title)
+	mov rdx, VA(Text)
+	mov rcx, 0
+	call [VA(MessageBoxA)]		
+
+	mov rsp, rbp
+	pop rbp
+	ret
+
+; data directories here
 IMPORT
 	LIB user32.dll
 		FUNC MessageBoxA
 	ENDLIB
 ENDIMPORT
 
-END
+EXPORT 64_exporter.dll
+	FUNC MyExport
+ENDEXPORT
 
-; Compile
-; nasm -f bin -o exporter.dll
+END
