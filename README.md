@@ -46,7 +46,8 @@ Example PE32 file:
 
 ; For 32-bit executable use PE32
 ; For 32-bit dll use DLL32
-; PE64 and DLL64 aren''t ready yet
+; For 64-bit executable use PE64
+; For 64-bit dll use DLL64
 PE32
 
 ; Data declarations
