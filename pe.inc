@@ -236,9 +236,7 @@
 %endmacro
 
 %macro ENDLIB 0
-	%if %$FUNCTION_COUNT > 0
-		%xdefine %$FUNCTION_COUNT_%[%$LIBRARY_COUNT] %$FUNCTION_COUNT
-	%endif
+	%xdefine %$FUNCTION_COUNT_%[%$LIBRARY_COUNT] %$FUNCTION_COUNT
 %endmacro
 
 %macro FUNC 1
