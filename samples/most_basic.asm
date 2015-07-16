@@ -29,5 +29,5 @@ START
 	ret 
 END
 
-; Compile
-; nasm -f bin -o most_basic.exe
+; Assemble
+; nasm -f bin -o most_basic.exe most_basic.asm

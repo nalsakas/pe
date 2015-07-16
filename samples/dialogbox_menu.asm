@@ -46,7 +46,6 @@ BYTE ok_text, "OK button pressed :-)",0
 
 START
 
-WinMain:
 	push ebp
 	mov ebp, esp
 	
@@ -59,8 +58,6 @@ WinMain:
 	push ID_MENU
 	push dword [VA(hIns)]
 	call [VA(LoadMenuA)]
-	test eax, eax
-	je .show_error
 	
 	; DialogBox
 	push 0
@@ -70,37 +67,10 @@ WinMain:
 	push dword [VA(hIns)]
 	call [VA(DialogBoxParamA)]
 	
-	test eax, eax
-	jle .show_error
-	jmp .return
-	
 .return:
 	mov esp, ebp
 	pop ebp
 	ret
-
-	
-; Show Error Message and Exit
-.show_error:
-
-	call [VA(GetLastError)]
-	mov [VA(LastError)], eax
-	
-	push NULL
-	push 200h
-	push VA(buffer)
-	push NULL
-	push eax
-	push NULL
-	push FORMAT_MESSAGE_FROM_SYSTEM
-	call [VA(FormatMessageA)]
-	
-	push MB_ICONERROR
-	push VA(title)
-	push VA(buffer)
-	push NULL
-	call [VA(MessageBoxA)]	
-	jmp .return
 
 ; Dialog Procedure
 ; [ebp + 20] = lParam
@@ -230,5 +200,5 @@ ENDMENU
 
 END
 
-; Compile
-; nasm -f bin -o dialogbox_menu.exe
+; Assemble
+; nasm -f bin -o dialogbox_menu.exe dialogbox_menu.asm

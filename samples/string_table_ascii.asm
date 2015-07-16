@@ -84,5 +84,5 @@ ENDSTRINGTABLE
 
 END
 
-; Compile
-; nasm -f bin -o string_table_ascii.exe 
+; Assemble
+; nasm -f bin -o string_table_ascii.exe string_table_ascii.asm

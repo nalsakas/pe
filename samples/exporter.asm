@@ -51,7 +51,7 @@ ExportMe:
 	pop ebp
 	ret 
 
-EXPORT exporter.dll
+EXPORT
 	FUNC ExportMe
 ENDEXPORT
 
@@ -63,5 +63,5 @@ ENDIMPORT
 
 END
 
-; Compile
-; nasm -f bin -o exporter.dll
+; Assemble
+; nasm -f bin -o exporter.dll exporter.asm

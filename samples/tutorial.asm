@@ -280,3 +280,6 @@ ENDDIALOG
 
 ; End of Application
 END
+
+; Assemble
+; nasm -f bin -o tutorial.exe tutorial.asm

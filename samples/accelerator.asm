@@ -62,19 +62,35 @@ MSG:
 	DWORD	.pt
 MSG_end:
 
+PAINTSTRUCT:
+	DWORD  ihdc
+	DWORD .fErase
+	DWORD .rcPaint[4]
+	DWORD .fRestore
+	DWORD .fIncUpdate
+	BYTE .rgbReserved[32]
+PAINTSTRUCT_end:
+
 BYTE wndClass, "WindowClass",0
 BYTE wndTitle, 	"NASM PE MACROS",0
 DWORD hWnd
 DWORD hIns
 DWORD hAccel
+DWORD hDC
 DWORD LastError
 
 ; MessageBox texts
 BYTE title, "NASM PE MACROS", 0
-BYTE text, "HELP menu item pressed", 0
-BYTE text_shift_a, "Shift + A keys pressed.", 0
-BYTE text_control_f5, "Control + F5 keys pressed.", 0
-BYTE text_alt_enter, "Alt + Enter keys pressed.", 0
+BYTE text, "HELP menu", 0
+
+BYTE text_shift_a, "Shift + A", 0
+text_shift_a_size dd $-text_shift_a
+
+BYTE text_control_f5, "Control + F5", 0
+text_control_f5_size dd $-text_control_f5
+
+BYTE text_alt_enter, "Alt + Enter", 0
+text_alt_enter_size dd $-text_alt_enter
 
 ; Alternative of "times 100h db 0"
 BYTE buffer[100h]
@@ -112,9 +128,6 @@ WinMain:
 	push VA(WNDCLASSEX)
 	call [VA(RegisterClassExA)]
 	
-	cmp eax, 0
-	je	.show_error
-	
 	; Create Window
 	push NULL
 	push dword [VA(hIns)]
@@ -131,9 +144,6 @@ WinMain:
 	call [VA(CreateWindowExA)]
 	mov [VA(hWnd)], eax
 	
-	cmp eax, 0
-	je .show_error
-	
 	; Show Window
 	push dword [ebp + 20]
 	push dword [VA(hWnd)]
@@ -143,8 +153,6 @@ WinMain:
 	push ID_ACCELERATOR
 	push dword [VA(hIns)]
 	call [VA(LoadAcceleratorsA)]
-	test eax, eax
-	je .show_error
 	mov [VA(hAccel)], eax
 	
 .msg_loop:
@@ -155,8 +163,7 @@ WinMain:
 	call [VA(GetMessageA)]
 	
 	cmp eax, 0
-	je .msg_loop_end
-	jl .show_error
+	jle .msg_loop_end
 	
 	; Translate Accelerator Messages
 	push VA(MSG)
@@ -180,28 +187,6 @@ WinMain:
 	mov esp, ebp
 	pop ebp
 	ret
-	
-; Show Error Message and Exit
-.show_error:
-	call [VA(GetLastError)]
-	mov [VA(LastError)], eax
-	
-	push NULL
-	push 200h
-	push VA(buffer)
-	push NULL
-	push eax
-	push NULL
-	push FORMAT_MESSAGE_FROM_SYSTEM
-	call [VA(FormatMessageA)]
-	
-	push MB_ICONERROR
-	push VA(title)
-	push VA(buffer)
-	push NULL
-	call [VA(MessageBoxA)]
-	jmp .return
-
 
 ; Window Precedure
 ; [ebp + 20] = lParam
@@ -211,12 +196,14 @@ WinMain:
 WinProc:
 	push ebp
 	mov ebp, esp
-	
+
 	; switch msg 
 	cmp dword [ebp + 12], WM_DESTROY
 	je .destroy
 	cmp dword [ebp + 12], WM_COMMAND
 	je .command
+	cmp dword [ebp + 12], WM_PAINT
+	je .paint
 
 .defproc:
 	push dword [ebp + 20]
@@ -235,11 +222,40 @@ WinProc:
 	call [VA(PostQuitMessage)]
 	xor eax, eax
 	jmp .return
+
+.paint:
+	push VA(PAINTSTRUCT)
+	push dword [ebp + 8]
+	call [VA(BeginPaint)]
+	mov [VA(hDC)], eax
+	
+	push dword [VA(text_shift_a_size)]
+	push VA(text_shift_a)
+	push 10
+	push 10
+	push dword [VA(hDC)]
+	call [VA(TextOutA)]
+	
+	push dword [VA(text_control_f5_size)]
+	push VA(text_control_f5)
+	push 40
+	push 10
+	push dword [VA(hDC)]
+	call [VA(TextOutA)]
+	
+	push dword [VA(text_alt_enter_size)]
+	push VA(text_alt_enter)
+	push 70
+	push 10
+	push dword [VA(hDC)]
+	call [VA(TextOutA)]	
+	
+	push VA(PAINTSTRUCT)
+	push dword [VA(hDC)]
+	call [VA(EndPaint)]
 	
 .command:
-	mov eax, dword [ebp + 16]
-	
-	; LOWORD (wParam)
+	mov eax, [ebp + 16]
 	cmp ax, IDM_FILE_EXIT
 	je .command_exit
 	cmp ax, IDM_FILE_HELP
@@ -325,8 +341,9 @@ ACCELERATORTABLE accelerator
 	ACCELERATOR 'A', ID_ACTION_SHIFT_A, FSHIFT
 	ACCELERATOR VK_F5, ID_ACTION_CONTROL_F5, FCONTROL | FVIRTKEY
 	ACCELERATOR VK_RETURN, ID_ACTION_ALT_ENTER, FALT | FVIRTKEY
-	; default key is shift, accelerator for menu item
-	ACCELERATOR 'H', IDM_FILE_HELP
+
+	ACCELERATOR 'H', IDM_FILE_HELP, FCONTROL | FVIRTKEY
+	ACCELERATOR 'E', IDM_FILE_EXIT, FCONTROL | FVIRTKEY
 ENDACCELERATORTABLE
 
 IMPORT
@@ -352,10 +369,16 @@ IMPORT
 		FUNC DestroyWindow
 		FUNC LoadAcceleratorsA
 		FUNC TranslateAcceleratorA
-	ENDLIB	
+		FUNC BeginPaint
+		FUNC EndPaint
+	ENDLIB
+	
+	LIB gdi32.dll
+		FUNC TextOutA
+	ENDLIB
 ENDIMPORT
 
 END
 
-; Compile
-; nasm -f bin -o accelerator.exe
+; Assemble
+; nasm -f bin -o accelerator.exe accelerator.asm

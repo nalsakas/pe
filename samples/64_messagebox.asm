@@ -34,7 +34,7 @@ START
 	push rbp
 	mov rbp, rsp
 	
-	; Fastcall callling convention
+	; Win64 callling convention
 	mov r9, 0
 	mov r8, VA(Title)
 	mov rdx, VA(Text)
@@ -53,3 +53,6 @@ IMPORT
 ENDIMPORT
 
 END
+
+; Compile
+; nasm -f bin -o 64_messagebox.exe

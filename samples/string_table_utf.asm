@@ -82,5 +82,5 @@ ENDSTRINGTABLE
 
 END
 
-; Compile
-; nasm -f bin -o string_table_utf.exe
+; Assemble
+; nasm -f bin -o string_table_utf.exe string_table_utf.asm

@@ -44,5 +44,5 @@ ENDIMPORT
 
 END
 
-; Compile
-; nasm -f bin -o importer.exe
+; Assemble
+; nasm -f bin -o 64_importer.exe 64_importer.asm

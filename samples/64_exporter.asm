@@ -38,8 +38,11 @@ MyExport:
 
 	push rbp
 	mov rbp, rsp
+	
+	; shadow stack area
+	sub rsp, 32
 
-	; Fastcall callling convention
+	; win64 callling convention
 	mov r9, 0
 	mov r8, VA(Title)
 	mov rdx, VA(Text)
@@ -57,8 +60,11 @@ IMPORT
 	ENDLIB
 ENDIMPORT
 
-EXPORT 64_exporter.dll
+EXPORT
 	FUNC MyExport
 ENDEXPORT
 
 END
+
+; Assemble
+; nasm -f bin -o 64_exporter.exe 64_exporter.asm

@@ -408,7 +408,7 @@
 ; ENDEXPORT
 ;##############################################################################
 ; %1 = Module name
-%macro EXPORT 1
+%macro EXPORT 0-1 ''
 	;ALIGN DWORD
 	BINALIGN 4, %$IMAGE_DOS_HEADER
 	
@@ -418,22 +418,16 @@
 	%assign %$EXPORT_COUNT 0
 	
 	; Get module name from parameter
-	%ifnempty %1
+	%ifstr %1
 		%define %$EXPORT_MODULE_NAME %1
 	%else
-		%error EXPORT expects module name as input
+		%defstr %$EXPORT_MODULE_NAME %1
 	%endif
-	bug( %?? ExportModuleName '%%Module_Name' %%Module_Name )
 %endmacro
 
 %macro ENDEXPORT 0
 	; Export module name
-	%ifnstr %$EXPORT_MODULE_NAME
-		%defstr %%substr %$EXPORT_MODULE_NAME
-		BYTE %%Module_Name, %%substr, 0
-	%else
-		BYTE %%Module_Name, %$EXPORT_MODULE_NAME,0
-	%endif
+	BYTE %%Module_Name, %$EXPORT_MODULE_NAME,0
 	
 	%%FUNCTIONS_ADDRESS:
 	%if %$EXPORT_COUNT > 0
@@ -441,9 +435,7 @@
 		
 		%rep %$EXPORT_COUNT
 			%assign %%i %%i + 1
-		
-			%define %%ENAME_%[%%i] %$EXPORT_NAME_%[%%i]
-			dd RVA(%%ENAME_%[%%i])
+			dd RVA(%[%$EXPORT_NAME_%[%%i]])
 		%endrep
 	%endif
 	
@@ -610,7 +602,6 @@
 			%endrep
 		%endrep
 	%endrep	
-	
 	
 	%assign %$RESOURCE_TYPECOUNT 0
 	%$IMAGE_RESOURCE_DIRECTORY_END:
@@ -1183,96 +1174,14 @@
 ; %1 = label
 ; %2 = file name on file system
 %macro FILE 2
-	;BINALIGN 4, %$IMAGE_DOS_HEADER
 	%1:
 	%ifnstr %2
 		%error %2 parameter must be a string.
 	%endif
+
 	incbin %2
+	
 	%1_end:
-%endmacro
-;##############################################################################
-; ICONGROUP / ENDICONGROUP Macros
-; 
-;
-; USAGE:
-; ICONGROUP 
-;    ICON label, 'filename', ID_RESOURCE
-;    ....
-; ENDICONGROUP
-;##############################################################################
-; %1 = label
-%macro ICONGROUP 1
-	%push icongroup
-	%define %$GROUP_NAME %1
-	%assign %$ICON_COUNT 0
-	
-	%$GROUP_NAME:
-%endmacro
-
-%macro ENDICONGROUP 0
-	%if %$ICON_COUNT > 0
-	
-		;GRPICONDIR
-		WORD %%idReserved
-		WORD %%idType, 1
-		WORD %%idCount, %$ICON_COUNT
-		
-		%assign %%i 0
-		%rep %$ICON_COUNT
-			%assign %%i %%i + 1
-			
-			;%%bWidth_%%i:
-			incbin %$ICON_FILENAME_%[%%i], 18, 1
-			
-			;%%bHeight_%%i:
-			incbin %$ICON_FILENAME_%[%%i], 22, 1
-			
-			;%%bColorCount_%%i:
-			db 0
-			
-			;%%bReserved_%%i:
-			db 0
-			
-			;%%wPlanes_%%i:
-			incbin %$ICON_FILENAME_%[%%i], 26, 2
-			
-			;%%wBitCount_%%i:
-			incbin %$ICON_FILENAME_%[%%i], 28, 2
-			
-			;%%dwBytesInRes_%%i:
-			incbin %$ICON_FILENAME_%[%%i], 34, 4
-			
-			;%%resID_%%i:
-			dw %$ICON_ID_%[%%i]
-			
-			;align
-			;dw 0
-		%endrep
-	
-		%assign %%j 0
-		%rep %$ICON_COUNT
-			%assign %%j %%j + 1
-			BITMAP %$ICON_LABEL_%[%%j], %$ICON_FILENAME_%[%%j]
-		%endrep
-	%endif	
-	
-	%[%$GROUP_NAME]_end:
-	%pop icongroup
-%endmacro
-
-; %1 = label
-; %2 = 'filename'
-; %3 = Resource ID
-%macro ICON 3
-	%ifctx icongroup
-		%assign %$ICON_COUNT %$ICON_COUNT + 1
-		%define %$ICON_LABEL_%[%$ICON_COUNT] %1
-		%define %$ICON_FILENAME_%[%$ICON_COUNT] %2
-		%define %$ICON_ID_%[%$ICON_COUNT] %3
-	%else
-		%error "ICON macro can only be used in ICONGROUP macro."
-	%endif
 %endmacro
 ;##############################################################################
 ; PE HEADER Macros

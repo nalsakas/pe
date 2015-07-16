@@ -23,15 +23,18 @@ For a long time I wanted to output *PE32, DLL32, PE64* and *DLL64* formats direc
 
 Why I created these macro sets? Answer is simple. Because I have a passion about inner workings of executables. Apart from that Ihave learned a lot while working with nasm macros and pe file format.
 
-With these macro sets you can do amazing executables by yourself. You don't need any object linker or resource compiler whatsoever. You can import any function you want just by typing its name; you can export any local function you want; you can include any resource you want; you can experiment and get a deeper insight of pe file format, etc.
+With these macro sets you can do custom executables by yourself. You don't need any object linker or resource compiler whatsoever. You can import any function you want just by typing its name; you can export any local function you want; you can include any resource you want; you can experiment and get a deeper insight of pe file format.
 
 Although there are a lot of macros under the hood, end user only need to know a few of them. Actually only 3 of them suffice for a very basic PE.
 
 ```
 %include 'pe.inc'  
-PE32  
+PE32
+
 START  
+  
   ret  
+
 END
 ```
 
@@ -39,7 +42,7 @@ Example above is a valid pe file. All it does is to return as soon as loaded. As
 
 Now, look at the below example.
 
-Example PE32 file:
+Sample PE32 file:
 
 ```
 %include "pe.inc"  
@@ -62,76 +65,29 @@ START
   push 0  
   call [VA(MessageBoxA)]  
 
-  LocalFunction:  
+LocalFunction:  
      ...  
      ret  
 
 ; Setup import directory if you need to  
-IMPORT  
-  ; write down imported dll's  
-  LIB user32.dll  
-    ; write down imported functions  
-    FUNC MessageBoxA  
-  ENDIMPORT  
-  LIB kernel32.dll  
-    FUNC ExitProcess  
-    ...  
-  ENDLIB  
-ENDIMPORT  
+IMPORT / ENDIMPORT  
 
 ; Setup Export Directory if you need to  
-EXPORT module_name  
-   ; write down local functions to export  
-   FUNC LocalFunction  
-   ...  
-ENDEXPORT  
+EXPORT / ENDEXPORT  
 
-; Setup Resource Directory if you need to  
-; This structure is also know as resource tree.  
-RESOURCE  
-  TYPE type_id  
-  	ID resource_id  
-  		LANG  
-  			LEAF RVA(resource_label), SIZEOF(resource_size)  
-  		ENDLANG  
-  	ENDID  
-  ENDTYPE  
-ENDRESOURCE  
+; Setup Resource Directory (Resource Tree) if you need to    
+RESOURCE / ENDRESOURCE  
 
 ; Setup Menu if defined in resource tree  
-MENU menu_label  
-	MENUITEM 'name', item_id  
-	POPUP 'name'  
-		MENUITEM 'name', item_id  
-	ENDPOPUP  
-ENDMENU  
+MENU / ENDMENU  
 
 ; Setup Dialog if defined in resource tree  
-DIALOG dialog_label, x, y, cx, cy  
-  STYLE dialog styles      ;Optional  
-  EXSTYLE extended styles  ;Optional  
-  FONT size, 'face'        ;Optional  
-  CAPTION 'Caption Text'   ;Optional  
-  FONT size, 'font face'   ;Optional  
-  
-  ; Controls  
-  ; Style and exstyle member of child controls are optional  
-  CONTROL 'name', id, class_id, x, y, cx, cy, sytles, exstyles  
-  
-  ; Below controls are based on CONTROL macro.  
-  ; Doesn't need class_id, because they are already declared inside.  
-  PUSHBUTTON 'text', id, x, y, cx, cy, optional style, optional exstyle  
-  ...  
-ENDDIALOG  
+DIALOG / ENDDIALOG  
 
 ; Setup String Table if defined in resource tree  
-STRINGTABLE label  
-  STRING 'First String'  
-  STRING 'Second String'  
-  STRING 'Third String'  
-  ...  
-  STRING '16th string'  
-ENDSTRINGTABLE  
+STRINGTABLE / ENDSTRINGTABLE  
+
+...
 
 END  
 ; End of executable  
@@ -159,25 +115,31 @@ Beware there are two types of call instructions. One uses relative displacement 
 If you want to use external functions from other libraries in your code use *IMPORT* macro. Import macro has following form.  
 
 ```
-IMPORT  
-	LIB Libname / user32.dll  
-		FUNC Functionname / MessageBoxA  
-	ENDLIB  
+IMPORT 
+	; write down imported dll's 
+	LIB Libname 
+		; write down imported functions 
+		FUNC Functionname  
+		...
+	ENDLIB
+	...
 	LIB kernel32.dll  
 		FUNC ExitProcess  
 	ENDLIB  
 ENIMPORT  
 ```
 
-There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string
-form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `"call [VA(function_name)]"`.
+There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `"call [VA(function_name)]"`.
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
 If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form libname.dll.
 
 ```
-EXPORT module_name  
+; module name is optional
+
+EXPORT module_name
+	; write down local functions to export
 	FUNC function_name  
 	...  
 ENDEXPORT  
@@ -185,36 +147,40 @@ ENDEXPORT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
-Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here.
-ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format.
+Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here. ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats. Raw and user defined types of resources doesn't have any special format. 
 
-Example Resource Tree:  
+Sample Resource Tree:
 
 ```
-; First define resource tree, which has type, id, lang and pointer to actual resources.
-RESOURCE  
-	TYPE type_id / RT_MENU  
+RESOURCE
+	TYPE type_id  
 		ID resource_id  
-			LANG lang_id, sublang_id / default is 0,0 for language neutral  
-				LEAF RVA(menu_label), SIZEOF(menu)  
+			LANG  lang_id, sublang_id / default is 0,0 for language neutral 
+				LEAF RVA(resource_label), SIZEOF(resource_size)  
 			ENDLANG  
 		ENDID  
-		ID resource_id2  
+	ENDTYPE
+
+	TYPE RT_MENU  
+		ID 200h  
+			LANG
+				LEAF RVA(menu_label), SIZEOF(menu)  
+			ENDLANG  
+		ENDID
+		
+		ID resource_id2 
 			...  
 		ENDID  
 	ENDTYPE  
 	
 	TYPE RT_DATA  
-		ID resource_id2  
+		ID resource_id3  
 			LANG  
 				LEAF RVA(raw_data), SIZEOF(raw_data)  
 			ENDLANG  
 		ENDID  
 	ENDTYPE  
-ENDRESOURCE  
-
-; Second define actual resources. They generally have special formats. Raw and 
-; user defined types of resources doesn't have any special format.  
+ENDRESOURCE   
 ```
 
 ## [:top:](#TABLE OF CONTENTS)<a name="MENU MACROS"></a>MENU MACROS
@@ -306,11 +272,21 @@ ENDACCELERATORTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="BITMAP MACRO"></a>BITMAP MACRO
 
-With BITMAP macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with BITMAP macro. Sample application is given in samples directory.
+With BITMAP macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with BITMAP macro.
 
 ```
-; %1 = label
-; %2 = Bitmap file in string form
+; Resource Tree
+RESOURCE
+	; Entry of bitmap in resource tree
+	TYPE RT_BITMAP
+		ID 100h
+			LANG
+				LEAF RVA(bitmap1), SIZEOF(bitmap1)
+			ENDLANG
+		ENDID
+	ENDTYPE
+ENDRESOURCE
 
+; Bitmap
 BITMAP bitmap1, 'bitmap.bmp'
 ```

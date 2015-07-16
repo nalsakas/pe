@@ -254,5 +254,5 @@ ENDIMPORT
 
 END
 
-; Compile
-; nasm -f bin -o window_menu.exe
+; Assemble
+; nasm -f bin -o window_menu.exe window_menu.asm

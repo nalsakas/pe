@@ -44,5 +44,5 @@ ENDIMPORT
 
 END
 
-; Compile
-; nasm -f bin -o messagebox.exe
+; Assemble
+; nasm -f bin -o messagebox.exe messagebox.asm
