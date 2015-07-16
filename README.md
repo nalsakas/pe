@@ -31,10 +31,8 @@ Although there are a lot of macros under the hood, end user only need to know a 
 %include 'pe.inc'  
 PE32
 
-START  
-  
+START    
   ret  
-
 END
 ```
 
