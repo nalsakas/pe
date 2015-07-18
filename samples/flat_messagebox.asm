@@ -23,20 +23,26 @@
 ;##############################################################################
 %include "../pe.inc"
 
-PE32
+PE32 FLAT
+
+BYTE Title, "NASM PE MACROS",0
+BYTE Text, "Flat memory works!",0
 
 START
-	; Call exported function
-	call [VA(ExportMe)]
+	push 0
+	push Title
+	push Text
+	push 0
+	call [MessageBoxA]
 	ret
 
 IMPORT
-	LIB exporter.dll
-		FUNC ExportMe
+	LIB user32.dll
+		FUNC MessageBoxA
 	ENDLIB
 ENDIMPORT
 
 END
 
 ; Assemble
-; nasm -f bin -o importer.exe importer.asm
+; nasm -f bin -o messagebox.exe messagebox.asm

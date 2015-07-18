@@ -83,6 +83,7 @@
 
 ; Debug Messages
 %define bug(x) dbgmsg x
+
 ;##############################################################################
 ; PE MACROS
 ;
@@ -103,10 +104,20 @@
 ; END
 ;
 ;##############################################################################
-%macro PE32 0
+%macro PE32 0-2 NOFLAT, 1000h
 	BITS 32
-	%push pe32
+	%push pe32	
 	
+	%ifidn %1, FLAT
+		org PE32_IMAGEBASE
+		%define FLATMEMORY
+		%define SALIGN %2
+		%define FALIGN %2
+		%define VA(x) x
+		%define RVA(x) x - PE32_IMAGEBASE
+		%define FA(x) x - PE32_IMAGEBASE 
+	%endif
+
 	IMAGE_DOS_HEADER
 	IMAGE_NT_SIGNATURE
 	IMAGE_FILE_HEADER
@@ -115,9 +126,19 @@
 	IMAGE_SECTION_HEADER
 %endmacro
 
-%macro DLL32 0
+%macro DLL32 0-2 NOFLAT, 1000h
 	BITS 32
 	%push dll32
+
+	%ifidn %1, FLAT
+		org DLL32_IMAGEBASE
+		%define FLATMEMORY
+		%define SALIGN %2
+		%define FALIGN %2
+		%define VA(x) x
+		%define RVA(x) x - DLL32_IMAGEBASE
+		%define FA(x) x - DLL32_IMAGEBASE 
+	%endif
 	
 	IMAGE_DOS_HEADER
 	IMAGE_NT_SIGNATURE
@@ -127,9 +148,19 @@
 	IMAGE_SECTION_HEADER
 %endmacro
 
-%macro PE64 0
+%macro PE64 0-2 NOFLAT, 1000h
 	BITS 64
 	%push pe64
+	
+	%ifidn %1, FLAT
+		org PE64_IMAGEBASE
+		%define FLATMEMORY
+		%define SALIGN %2
+		%define FALIGN %2
+		%define VA(x) x
+		%define RVA(x) x - PE64_IMAGEBASE
+		%define FA(x) x - PE64_IMAGEBASE 
+	%endif	
 	
 	IMAGE_DOS_HEADER
 	IMAGE_NT_SIGNATURE
@@ -139,9 +170,19 @@
 	IMAGE_SECTION_HEADER	
 %endmacro
 
-%macro DLL64 0
+%macro DLL64 0-2 NOFLAT, 1000h
 	BITS 64
 	%push dll64
+
+	%ifidn %1, FLAT
+		org DLL64_IMAGEBASE
+		%define FLATMEMORY
+		%define SALIGN %2
+		%define FALIGN %2
+		%define VA(x) x
+		%define RVA(x) x - DLL64_IMAGEBASE
+		%define FA(x) x - DLL64_IMAGEBASE 
+	%endif
 
 	IMAGE_DOS_HEADER
 	IMAGE_NT_SIGNATURE
@@ -182,8 +223,12 @@
 %endmacro
 
 ; Round Functions
-%define ROUNDVS(x,y) ((x - y)/SALIGN + 1)*SALIGN
-%define ROUNDFS(x,y) ((x - y)/FALIGN + 1)*FALIGN
+; There are two possible solutions
+;%define ROUNDVS(x,y) ((x - y) / FALIGN) * SALIGN
+%define ROUNDVS(x,y) ((x - y)/SALIGN)*SALIGN + (x - y) % SALIGN + ((SALIGN - (x - y) % SALIGN) % SALIGN ) 
+ 
+; FA (File Address) function
+%define FA(x) x
 
 ; VA (Virtual Address) function
 %define VA(x)	x - %$SECTION_START_1 + ROUNDVS(%$IMAGE_SECTION_HEADER_END, %$IMAGE_DOS_HEADER) + IMAGEBASE
@@ -216,10 +261,7 @@
 ;   ENDLIB
 ; ENDIMPORT
 ;##############################################################################
-%macro IMPORT 0
-	;ALIGN DWORD
-	BINALIGN 4, %$IMAGE_DOS_HEADER
-	
+%macro IMPORT 0	
 	%assign %$IMPORT 1
 	%assign %$LIBRARY_COUNT 0
 %endmacro
@@ -408,10 +450,7 @@
 ; ENDEXPORT
 ;##############################################################################
 ; %1 = Module name
-%macro EXPORT 0-1 ''
-	;ALIGN DWORD
-	BINALIGN 4, %$IMAGE_DOS_HEADER
-	
+%macro EXPORT 0-1 ''	
 	%assign %$EXPORT 1
 	
 	; Reset exported function count
@@ -516,10 +555,7 @@
 ; and dialogs. They may also have no structure at all like a raw data or
 ; they may have user defined structures.
 ;##############################################################################
-%macro RESOURCE 0
-	;ALIGN DWORD
-	BINALIGN 4, %$IMAGE_DOS_HEADER
-	
+%macro RESOURCE 0	
 	%assign %$RESOURCE 1
 	%assign %$RESOURCE_TYPECOUNT 0
 	%assign %$RESOURCE_IDCOUNT 0
@@ -1216,7 +1252,7 @@
 	WORD %%e_oemid
 	WORD %%e_oeminfo
 	WORD %%e_res2[10]
-	DWORD %%e_lfanew, %$PE_SIGNATURE
+	DWORD %%e_lfanew, FA(%$PE_SIGNATURE)
 %endmacro
 
 %macro IMAGE_NT_SIGNATURE 0
@@ -1311,7 +1347,7 @@
 	%define %%IMAGE_SIZE  ROUNDVS(%$IMAGE_END, %$IMAGE_SECTION_HEADER_END) + ROUNDVS(%$IMAGE_SECTION_HEADER_END, %$IMAGE_DOS_HEADER)
 	
 	; Headers Size
-	%define %%HEADERS_SIZE %$IMAGE_SECTION_HEADER_END - %$IMAGE_DOS_HEADER
+	%define %%HEADERS_SIZE (%$IMAGE_SECTION_HEADER_END - %$IMAGE_DOS_HEADER)
 	
 	; Section Table
 	WORD    %%Magic, %%Magik
@@ -1444,12 +1480,9 @@
 	
 	; Virtual Size
 	%define %$SECTION_VS_1 ROUNDVS(%$SECTION_END_1, %$SECTION_START_1)
-
-	; Virtual Size
-	%define %$SECTION_VS_1 ROUNDVS(%$SECTION_END_1, %$SECTION_START_1)
-
+	
 	; File Address
-	%define %$SECTION_FA_1 %$SECTION_START_1
+	%define %$SECTION_FA_1 FA(%$SECTION_START_1)
 
 	; File Size
 	%define %$SECTION_FS_1 (%$SECTION_END_1 - %$SECTION_START_1)
@@ -1483,7 +1516,6 @@
 	%else
 		%error "String expected " %%str
 	%endif
-	bug(%?? 'SECTIONNAME' SECTIONNAME '%%len' %%len '%%SECTION_NAME_1' %%SECTION_NAME_1 )
 	
 	; Section Table
 	BYTE    %%Name, %%SECTION_NAME_1

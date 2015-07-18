@@ -8,14 +8,15 @@ License: GPL v2
 
 1. [INRODUCTION](#INRODUCTION)
 2. [VA()/RVA() MACROS](#VA()/RVA() MACROS)
-3. [IMPORT MACROS](#IMPORT MACROS)
-4. [EXPORT MACROS](#EXPORT MACROS)
-5. [RESOURCE MACROS](#RESOURCE MACROS)
-6. [MENU MACROS](#MENU MACROS)
-7. [DIALOG MACROS](#DIALOG MACROS)
-8. [STRINGTABLE MACROS](#STRINGTABLE MACROS)
-9. [ACCELERATORTABLE MACROS](#ACCELERATORTABLE MACROS)
-10. [BITMAP MACRO](#BITMAP MACRO)
+3. [FLAT MODEL](#FLAT MODEL)
+4. [IMPORT MACROS](#IMPORT MACROS)
+5. [EXPORT MACROS](#EXPORT MACROS)
+6. [RESOURCE MACROS](#RESOURCE MACROS)
+7. [MENU MACROS](#MENU MACROS)
+8. [DIALOG MACROS](#DIALOG MACROS)
+9. [STRINGTABLE MACROS](#STRINGTABLE MACROS)
+10. [ACCELERATORTABLE MACROS](#ACCELERATORTABLE MACROS)
+11. [BITMAP MACRO](#BITMAP MACRO)
 
 ## [:top:](#TABLE OF CONTENTS)<a name="INTRODUCTION"></a>INTRODUCTION
 
@@ -107,6 +108,35 @@ Examples:
 |call label|call label|this line doesn't require VA()|
 
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
+
+## [:top:](#TABLE OF CONTENTS)<a name="FLAT MODEL"></a>FLAT MODEL
+*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionaly excepts FLAT parameter. When it is used it removes the neccessity of using VA() macro at labels. PE32 has optional third argument which is both section alignment and file alignment constant. If you don't supply anything it is 1000h. 
+ 
+After FLAT model your code looks simpler because all VA() references are removed. Downside is that in default 1000h file and section alinment your executable's size increases. 
+```
+%include "../pe.inc"
+
+PE32 FLAT
+
+BYTE Title, "NASM PE MACROS",0
+BYTE Text, "Flat memory works!",0
+
+START
+	push 0
+	push Title
+	push Text
+	push 0
+	call [MessageBoxA]
+	ret
+
+IMPORT
+	LIB user32.dll
+		FUNC MessageBoxA
+	ENDLIB
+ENDIMPORT
+
+END
+```
 
 ## [:top:](#TABLE OF CONTENTS)<a name="IMPORT MACROS"></a>IMPORT MACROS
 
