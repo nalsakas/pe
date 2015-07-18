@@ -1,3 +1,7 @@
+#VERSION 0.8, 18/07/2015
+- FLAT model added. No need to use VA() macro now
+- Bug in ROUNDVS() removed.
+
 #VERSION 0.7, 16/07/2015
 - EXPORT module name is optional now
 - Code clean up
