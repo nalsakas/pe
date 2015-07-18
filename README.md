@@ -110,7 +110,7 @@ Examples:
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
 
 ## [:top:](#TABLE OF CONTENTS)<a name="FLAT MODEL"></a>FLAT MODEL
-*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionaly excepts FLAT parameter. When it is used it removes the neccessity of using VA() macro at labels. PE32 has optional third argument which is both section alignment and file alignment constant. If you don't supply anything it is 1000h. 
+*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts FLAT parameter. When it is used it removes the necessity of using VA() macros at labels. PE32 has optional third argument which is both section alignment and file alignment constant. If you don't supply anything it is 1000h. 
  
 After FLAT model your code looks simpler because all VA() references are removed. Downside is that in default 1000h file and section alinment your executable's size increases. 
 ```
