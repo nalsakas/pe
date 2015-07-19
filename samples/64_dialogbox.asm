@@ -37,12 +37,11 @@ QWORD hIns
 BYTE buffer[256]
 
 START
-
 	push rbp
 	mov rbp, rsp
-	
+		
 	; shadow stack area
-	sub rsp, 40
+	sub rsp, 48
 	
 	; Get module handle
 	mov rcx, 0
@@ -50,6 +49,8 @@ START
 	mov [VA(hIns)], rax
 	
 	; DialogBox
+	xor rax, rax
+	mov qword [rsp + 32], rax
 	mov r9, VA(DlgProc)
 	mov r8, 0
 	mov rdx, ID_DIALOG
@@ -68,16 +69,16 @@ START
 ; [rcx] = hDlg
 DlgProc:
 	; save parameters on shadow
-	mov qword [rsp + 8], rcx
-	mov qword [rsp + 16], rdx
-	mov qword [rsp + 24], r8
-	mov qword [rsp + 32], r9
+	mov [rsp + 8], rcx
+	mov [rsp + 16], rdx
+	mov [rsp + 24], r8
+	mov [rsp + 32], r9
 
 	push rbp
 	mov rbp, rsp
 	
 	; shadow stack area
-	sub rsp, 40
+	sub rsp, 32
 	
 	; switch msg
 	cmp qword [rbp + 24], WM_CLOSE
@@ -143,8 +144,6 @@ IMPORT
 	ENDLIB
 	LIB kernel32.dll
 		FUNC GetModuleHandleA
-		FUNC LoadLibraryA
-		FUNC FreeLibrary
 	ENDLIB
 ENDIMPORT
 
@@ -162,8 +161,8 @@ DIALOG dialog, 0, 0, 210, 142
 	STYLE DS_CENTER
 	CAPTION "NASM PE MACROS"
 
-	DEFPUSHBUTTON "OK", ID_BUTTON, 2, 122, 208, 18
-	EDITTEXT ID_EDIT, 2, 2, 208, 120, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL
+	DEFPUSHBUTTON "OK", ID_BUTTON, 1, 122, 208, 19
+	EDITTEXT ID_EDIT, 1, 1, 208, 120, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL
 ENDDIALOG
 
 END

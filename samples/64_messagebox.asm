@@ -33,6 +33,7 @@ START
 ; instructions
 	push rbp
 	mov rbp, rsp
+	sub rsp, 32
 	
 	; Win64 callling convention
 	mov r9, 0

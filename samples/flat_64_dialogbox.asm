@@ -42,7 +42,7 @@ START
 	mov rbp, rsp
 	
 	; shadow stack area
-	sub rsp, 40
+	sub rsp, 48
 	
 	; Get module handle
 	mov rcx, 0
@@ -50,6 +50,8 @@ START
 	mov [hIns], rax
 	
 	; DialogBox
+	xor rax, rax
+	mov [rsp + 32], rax
 	mov r9, DlgProc
 	mov r8, 0
 	mov rdx, ID_DIALOG
@@ -77,7 +79,7 @@ DlgProc:
 	mov rbp, rsp
 	
 	; shadow stack area
-	sub rsp, 40
+	sub rsp, 32
 	
 	; switch msg
 	cmp qword [rbp + 24], WM_CLOSE
@@ -162,8 +164,8 @@ DIALOG dialog, 0, 0, 210, 142
 	STYLE DS_CENTER
 	CAPTION "NASM PE MACROS"
 
-	DEFPUSHBUTTON "OK", ID_BUTTON, 2, 122, 208, 18
-	EDITTEXT ID_EDIT, 2, 2, 208, 120, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL
+	DEFPUSHBUTTON "OK", ID_BUTTON, 1, 122, 208, 19
+	EDITTEXT ID_EDIT, 1, 1, 208, 120, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL
 ENDDIALOG
 
 END
