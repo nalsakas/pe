@@ -110,9 +110,9 @@ Examples:
 Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
 
 ## [:top:](#TABLE OF CONTENTS)<a name="FLAT MODEL"></a>FLAT MODEL
-*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts FLAT parameter. When it is used it removes the necessity of using VA() macros at labels. PE32 has optional third argument which is both section alignment and file alignment constant. If you don't supply anything it is 1000h. 
+*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts FLAT parameter. When it is used it removes the necessity of using VA() macros at labels. PE32 has optional third argument which sets both section alignment and file alignment to a same constant. This way your executable will become flattened. It's size will become same both in file and in memory. If you don't supply anything it is 1000h. 
  
-After FLAT model your code looks simpler because all VA() references are removed. Downside is that in default 1000h file and section alinment your executable's size increases. 
+After FLAT model your code looks simpler because all VA() references are removed. Downside is that in default 1000h file and section alignment your executable's size increases. 
 ```
 %include "../pe.inc"
 
@@ -161,7 +161,7 @@ There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is 
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
-If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory needs a module name which is its file name. Usually in this form libname.dll.
+If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory optionally takes module name which is it's file name. Usually in this form libname.dll.
 
 ```
 ; module name is optional
@@ -175,7 +175,7 @@ ENDEXPORT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
-Resources have tree like structures. According to documantation there can be only 3-level. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here. ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats. Raw and user defined types of resources doesn't have any special format. 
+Resources are tree like structures hence this structure is also called as resource tree. According to msdn there are only 3-levels. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here. ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats.
 
 Sample Resource Tree:
 
