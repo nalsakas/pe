@@ -41,7 +41,7 @@ Example above is a valid pe file. All it does is to return as soon as loaded. As
 
 Now, look at the below example.
 
-Sample PE32 file:
+Sample *PE32* file:
 
 ```
 %include "pe.inc"  
@@ -92,7 +92,7 @@ END
 ; End of executable  
 ```
 
-You can find detailed analysis of user space macros below. Have fun.
+You can find detailed analysis of user space macros below.
 
 ## [:top:](#TABLE OF CONTENTS)<a name="VA()/RVA() MACROS"></a>VA()/RVA() MACROS
 
@@ -107,12 +107,12 @@ Examples:
 |call [label]|call [VA(label)]| |  
 |call label|call label|this line doesn't require VA()|
 
-Beware there are two types of call instructions. One uses relative displacement whose form is `"call label"`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `"call [label]"` form. This form as you expect requires *VA()* macro.  
+Beware there are two types of call instructions. One uses relative displacement whose form is `call label`. This form doesn't require *VA()* macro. But the other form which needs absolute virtual address has `call [label]` form. This form as you expect requires *VA()* macro.  
 
 ## [:top:](#TABLE OF CONTENTS)<a name="FLAT MODEL"></a>FLAT MODEL
-*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts FLAT parameter. When it is used it removes the necessity of using VA() macros at labels. PE32 has optional third argument which sets both section alignment and file alignment to a same constant. This way your executable will become flattened. It's size will become same both in file and in memory. If you don't supply anything it is 1000h. 
+*PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts *FLAT* parameter. When used it removes the necessity of using *VA()* macros at labels. PE32 also has optional third argument which sets both section alignment and file alignment to the same constant. This way your executable becomes flattened. It's size will become equal both in file and in memory. If you don't supply anything default alignment is 1000h. 
  
-After FLAT model your code looks simpler because all VA() references are removed. Downside is that in default 1000h file and section alignment your executable's size increases. 
+After *FLAT* model is used your code will look simpler because all *VA()* references are unneccessary and can be removed. The only downside is that in default 1000h alignment your executables size's increases. 
 ```
 %include "../pe.inc"
 
@@ -123,10 +123,10 @@ BYTE Text, "Flat memory works!",0
 
 START
 	push 0
-	push Title
-	push Text
+	push Title 			;--> No VA() anymore
+	push Text  			;--> No VA() anymore
 	push 0
-	call [MessageBoxA]
+	call [MessageBoxA]	;--> No VA() anymore
 	ret
 
 IMPORT
@@ -157,7 +157,7 @@ IMPORT
 ENIMPORT  
 ```
 
-There can be more than one *LIB/ENDLIB* as well as more than one FUNC. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `"call [VA(function_name)]"`.
+There can be more than one *LIB/ENDLIB* as well as more than one *FUNC*. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `call [VA(function_name)]`.
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
@@ -175,7 +175,7 @@ ENDEXPORT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
-Resources are tree like structures hence this structure is also called as resource tree. According to msdn there are only 3-levels. First level is TYPE level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define IDs of resources here. ID_ICON, ID_MENU etc. Third level is language level. You define language and sublanguage IDs here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats.
+Resources are tree like structures hence this structure is also called as resource tree. According to msdn there are only 3-levels. First level is *TYPE* level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define *IDs* of resources here. ID_ICON, ID_MENU etc. Third level is *LANG*, language level. You define language and sublanguage *IDs* here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats.
 
 Sample Resource Tree:
 
@@ -184,7 +184,7 @@ RESOURCE
 	TYPE type_id  
 		ID resource_id  
 			LANG  lang_id, sublang_id / default is 0,0 for language neutral 
-				LEAF RVA(resource_label), SIZEOF(resource_size)  
+				LEAF RVA(resource_label), SIZEOF(resource_label)  
 			ENDLANG  
 		ENDID  
 	ENDTYPE
@@ -192,7 +192,7 @@ RESOURCE
 	TYPE RT_MENU  
 		ID 200h  
 			LANG
-				LEAF RVA(menu_label), SIZEOF(menu)  
+				LEAF RVA(menu), SIZEOF(menu)  
 			ENDLANG  
 		ENDID
 		
@@ -259,8 +259,8 @@ There are total 15 kinds of predefined child controls. All of them based on CONT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="STRINGTABLE MACROS"></a>STRINGTABLE MACROS
 
-One string table can hold up to 16 strings. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use SID() macro which stands for string ID. This macro excpects
-2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. SID() macro returns calculated ID of each string in a table.
+One string table can hold up to 16 strings. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use *SID()* macro which stands for string ID. This macro excpects
+2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. *SID()* macro returns calculated ID of each string in a table.
 
 ```
 push buffer_size  
@@ -300,7 +300,7 @@ ENDACCELERATORTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="BITMAP MACRO"></a>BITMAP MACRO
 
-With BITMAP macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with BITMAP macro.
+With *BITMAP* macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with *BITMAP* macro.
 
 ```
 ; Resource Tree
