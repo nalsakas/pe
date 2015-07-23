@@ -20,9 +20,9 @@ License: GPL v2
 
 ## [:top:](#TABLE OF CONTENTS)<a name="INTRODUCTION"></a>INTRODUCTION
 
-For a long time I wanted to output *PE32, DLL32, PE64* and *DLL64* formats directly from nasm assembler. Nasm doesn't have support of direct output to executable files or dll files but instead it has support of raw binary output and has advanced macro support. My aim in this project is to use nasm's macro capability to directly output executables. In order to make that happen I need to invent pretty a lot new macros. Some of them are PE header structures, section tables, data directories, resource macros, etc.
+For a long time I wanted to output *PE32, DLL32, PE64* and *DLL64* formats directly from nasm assembler. Nasm doesn't have support of direct output to executable files or dll files but instead it has support of raw binary output and has advanced macro support. My aim in this project is to use nasm's macro capability to directly output executables. In order to made that happen I needed to invent pretty a lot new macros. Some of them are PE header structures, section tables, data directories, resource macros, etc.
 
-Why I created these macro sets? Answer is simple. Because I have a passion about inner workings of executables. Apart from that Ihave learned a lot while working with nasm macros and pe file format.
+Why I created these macro sets? Answer is simple. Because I have a passion about inner workings of executables. Apart from that I have learned a lot while working with nasm macros and pe file format.
 
 With these macro sets you can do custom executables by yourself. You don't need any object linker or resource compiler whatsoever. You can import any function you want just by typing its name; you can export any local function you want; you can include any resource you want; you can experiment and get a deeper insight of pe file format.
 
@@ -154,14 +154,14 @@ IMPORT
 	LIB kernel32.dll  
 		FUNC ExitProcess  
 	ENDLIB  
-ENIMPORT  
+ENDIMPORT  
 ```
 
 There can be more than one *LIB/ENDLIB* as well as more than one *FUNC*. Usage is very simple. All this macro does is to put import table where it is declared. Notice that libname and function names are in token form. They are not in string form. This macro turns function names into labels. That labels behaves like addresses of IAT entry of that particular function. If you need to access imported function inside assembly use `call [VA(function_name)]`.
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
-If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory optionally takes module name which is it's file name. Usually in this form libname.dll.
+If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory optionally takes module name which is it's file name. Usually in this form `libname.dll`.
 
 ```
 ; module name is optional
@@ -175,7 +175,7 @@ ENDEXPORT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
-Resources are tree like structures hence this structure is also called as resource tree. According to msdn there are only 3-levels. First level is *TYPE* level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define *IDs* of resources here. ID_ICON, ID_MENU etc. Third level is *LANG*, language level. You define language and sublanguage *IDs* here. Last level is known as leaf level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources. They generally have special formats.
+Resources are tree like structures hence this structure is also known as resource tree. According to msdn there are only 3-levels. First level is *TYPE* level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define *IDs* of resources here. ID_ICON, ID_MENU etc. Third level is *LANG*, language level. You define language and sublanguage *IDs* here. Last level is known as LEAF level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources.
 
 Sample Resource Tree:
 
@@ -213,7 +213,7 @@ ENDRESOURCE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="MENU MACROS"></a>MENU MACROS
 
-In order to use menu resources first include one resource with RT_MENU type into resource tree. Than use following *MENU* macro to define your menu.
+In order to use menu resources first include one resource with RT_MENU type into resource tree. Then use following *MENU* macro to define your menu.
 
 ```
 ; Menu macro generates special format required by MENU resources.  
@@ -228,7 +228,7 @@ MENU menu_label
 ENDMENU  
 ```
 
-*MENU* macros helps tou create menu resources. There are only 2 type of child macros declared inside. One is *MENUITEM* and other is *POPUP/ENDPOPUP*.
+*MENU* macros helps tou create menu resources. There are only 2 types of child macros declared inside. One is *MENUITEM* and other is *POPUP/ENDPOPUP*.
 
 ## [:top:](#TABLE OF CONTENTS)<a name="DIALOG MACROS"></a>DIALOG MACROS
 
@@ -287,7 +287,7 @@ ENDSTRINGTABLE
 With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of accelerator type into resource tree. Than add following table.
 
 ```
-ACCELERATORTABLE accelerator
+ACCELERATORTABLE label
    ; %1 = ascii key or virtual key,  %2 = ID of key,  %3 = flags
    ACCELERATOR 'A', ID_ACTION_SHIFT_A, FSHIFT
    ACCELERATOR VK_F5, ID_ACTION_CONTROL_F5, FCONTROL | FVIRTKEY
@@ -309,12 +309,12 @@ RESOURCE
 	TYPE RT_BITMAP
 		ID 100h
 			LANG
-				LEAF RVA(bitmap1), SIZEOF(bitmap1)
+				LEAF RVA(bitmap_label), SIZEOF(bitmap_label)
 			ENDLANG
 		ENDID
 	ENDTYPE
 ENDRESOURCE
 
 ; Bitmap
-BITMAP bitmap1, 'bitmap.bmp'
+BITMAP bitmap_label, 'bitmap.bmp'
 ```
