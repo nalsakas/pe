@@ -37,7 +37,7 @@ START
 END
 ```
 
-Example above is a valid pe file. All it does is to return as soon as loaded. As you can see there are only 3 macros you need to remember. *PE32, START* and *END*.
+Example above is a valid pe file. All it does is to return as soon as loaded. There are only 3 macros you need to remember. *PE32, START* and *END*.
 
 Now, look at the below example.
 
@@ -112,7 +112,7 @@ Beware there are two types of call instructions. One uses relative displacement 
 ## [:top:](#TABLE OF CONTENTS)<a name="FLAT MODEL"></a>FLAT MODEL
 *PE32*, *PE64*, *DLL32* and *DLL64* macros now optionally excepts *FLAT* parameter. When used it removes the necessity of using *VA()* macros at labels. PE32 also has optional third argument which sets both section alignment and file alignment to the same constant. This way your executable becomes flattened. It's size will become equal both in file and in memory. If you don't supply anything default alignment is 1000h. 
  
-After *FLAT* model is used your code will look simpler because all *VA()* references are unneccessary and can be removed. The only downside is that in default 1000h alignment your executables size's increases. 
+When *FLAT* model used, code looks simpler because all *VA()* references can be removed. They are no longer needed. The only downside is that in default 1000h alignment your executables size's increases. 
 ```
 %include "../pe.inc"
 
@@ -140,7 +140,7 @@ END
 
 ## [:top:](#TABLE OF CONTENTS)<a name="IMPORT MACROS"></a>IMPORT MACROS
 
-If you want to use external functions from other libraries in your code use *IMPORT* macro. Import macro has following form.  
+If you want to use external functions from other libraries in your code use *IMPORT* macro. IMPORT macro has following form.  
 
 ```
 IMPORT 
@@ -213,7 +213,7 @@ ENDRESOURCE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="MENU MACROS"></a>MENU MACROS
 
-In order to use menu resources first include one resource with RT_MENU type into resource tree. Then use following *MENU* macro to define your menu.
+In order to use menu resources first include a resource of type RT_MENU into resource tree. Then use following *MENU* macro to define your menu.
 
 ```
 ; Menu macro generates special format required by MENU resources.  
@@ -259,22 +259,21 @@ There are total 15 kinds of predefined child controls. All of them based on CONT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="STRINGTABLE MACROS"></a>STRINGTABLE MACROS
 
-One string table can hold up to 16 strings. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use *SID()* macro which stands for string ID. This macro excpects
-2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. *SID()* macro returns calculated ID of each string in a table.
+One STRINGTABLE can hold up to 16 STRINGs. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use *SID()* macro which stands for string ID. This macro excpects 2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. *SID()* macro returns calculated ID of each string in a table.
 
 ```
 push buffer_size  
-push VA(buffer)  
+push VA(buffer)  			 ; twice size of a char buffer
 push SID(ID_TABLE, 1)        ; loads first string  
 push dword [VA(hInstance)]  
 call [VA(LoadStringA)]   
 ```
 
-Strings  in tables are stored as 16-bit unicode strings. That means when you create a buffer you need twice size of a char. In asm that equals size of a word.
+Before using STRINGTABLE macros first include a resource of type RT_STRING into resource tree. STRING's  in tables are stored as 16-bit unicode strings.
 
 ```
 STRINGTABLE label  
-  STRING 'First String'  
+  STRING 'First String'		; stored as unicode strings.  
   STRING 'Second String'  
   STRING 'Third String'  
   ...  
@@ -284,7 +283,7 @@ ENDSTRINGTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="ACCELERATORTABLE MACROS"></a>ACCELERATORTABLE MACROS
 
-With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of accelerator type into resource tree. Than add following table.
+With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of type RT_ACCELERATOR into resource tree. Than add following table.
 
 ```
 ACCELERATORTABLE label
@@ -300,7 +299,7 @@ ENDACCELERATORTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="BITMAP MACRO"></a>BITMAP MACRO
 
-With *BITMAP* macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include an resource of type RT_BITMAP into resource tree. Than add file with *BITMAP* macro.
+With *BITMAP* macro you can include bitmaps into your resources. Then you can use them inside asm code with LoadBitmap API. To start with bitmaps first include a resource of type RT_BITMAP into resource tree.
 
 ```
 ; Resource Tree
