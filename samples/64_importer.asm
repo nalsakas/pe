@@ -26,13 +26,14 @@
 PE64
 
 START
-
-	push rbp
-	mov rbp, rsp
 	
+	;Align stack to 16 bytes
+	push rbp
+	
+	; Call exported function of library
+	; Function doesn't take any parameters.
 	call [VA(MyExport)]
 	
-	mov rsp, rbp
 	pop rbp
 	ret
 

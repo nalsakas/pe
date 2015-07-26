@@ -57,7 +57,6 @@ START
 	mov rcx, [VA(hIns)]
 	call [VA(DialogBoxParamA)]
 	
-.return:
 	mov rsp, rbp
 	pop rbp
 	ret
