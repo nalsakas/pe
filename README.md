@@ -140,7 +140,7 @@ END
 
 ## [:top:](#TABLE OF CONTENTS)<a name="IMPORT MACROS"></a>IMPORT MACROS
 
-If you want to use external functions from other libraries in your code use *IMPORT* macro. IMPORT macro has following form.  
+If you want to use external functions from other libraries in your code use *IMPORT* macro. *IMPORT* macro has following form.  
 
 ```
 IMPORT 
@@ -161,7 +161,7 @@ There can be more than one *LIB/ENDLIB* as well as more than one *FUNC*. Usage i
 
 ## [:top:](#TABLE OF CONTENTS)<a name="EXPORT MACROS"></a>EXPORT MACROS
 
-If you want to export local functions of your executable use this macro. According to PE documantation both EXE files and DLL's can have exported functions. Sample usage is given below. Function_name is one of local function. Each export directory optionally takes module name which is it's file name. Usually in this form `libname.dll`.
+If you want to export local functions of your executable use this macro. According to msdn both EXE files and DLL's can have exported functions. *EXPORT* macro puts export directory where it is declared. Sample usage is given below. function_name is one of local functions. Export directory optionally takes module name which is it's file name. Usually in this form `libname.dll`. You can access exported functions of a library by importing it.
 
 ```
 ; module name is optional
@@ -175,7 +175,7 @@ ENDEXPORT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="RESOURCE MACROS"></a>RESOURCE MACROS
 
-Resources are tree like structures hence this structure is also known as resource tree. According to msdn there are only 3-levels. First level is *TYPE* level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define *IDs* of resources here. ID_ICON, ID_MENU etc. Third level is *LANG*, language level. You define language and sublanguage *IDs* here. Last level is known as LEAF level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special format. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources.
+Resources are tree like structures hence this structure is also known as resource tree. According to msdn there are only 3-levels. First level is *TYPE* level. You declare type of resource here. RT_MENU, RT_DATA, RT_DIALOG etc. Second level is ID level. You define *IDs* of resources here. ID_ICON, ID_MENU etc. Third level is *LANG*, language level. You define language and sublanguage *IDs* here. Last level is known as LEAF level. You can use leafs as pointers to actual resources. Many resources require additional structures. User defined resources and raw resources doesn't require any special structures. First define resource tree, which has type, id, lang and pointer to actual resources. Second define actual resources like MENU's, DIALOGs, etc.
 
 Sample Resource Tree:
 
@@ -213,7 +213,7 @@ ENDRESOURCE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="MENU MACROS"></a>MENU MACROS
 
-In order to use menu resources first include a resource of type RT_MENU into resource tree. Then use following *MENU* macro to define your menu.
+In order to use *MENU* resources first include a resource of type RT_MENU into resource tree. Then use following *MENU* macro to define your menu.
 
 ```
 ; Menu macro generates special format required by MENU resources.  
@@ -259,7 +259,7 @@ There are total 15 kinds of predefined child controls. All of them based on CONT
 
 ## [:top:](#TABLE OF CONTENTS)<a name="STRINGTABLE MACROS"></a>STRINGTABLE MACROS
 
-One STRINGTABLE can hold up to 16 STRINGs. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use *SID()* macro which stands for string ID. This macro excpects 2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. *SID()* macro returns calculated ID of each string in a table.
+One *STRINGTABLE* can hold up to 16 *STRING*s. If you have more than 16 strings you need to open another table. Each table referenced by one resource ID in resource tree. Normal resource compilers needs you put string ID's in the table. We don't use this method here. Instead we put strings in table without ID but with implied index. First string has index 1, second is 2 and so on. When you need to reference a string in a table use *SID()* macro which stands for string ID. This macro excpects 2 parameters. First one is resource ID of table defined in resource tree and second one is index of string. *SID()* macro returns calculated ID of each string in a table.
 
 ```
 push buffer_size  
@@ -269,7 +269,7 @@ push dword [VA(hInstance)]
 call [VA(LoadStringA)]   
 ```
 
-Before using STRINGTABLE macros first include a resource of type RT_STRING into resource tree. STRING's  in tables are stored as 16-bit unicode strings.
+Before using *STRINGTABLE* macros first include a resource of type RT_STRING into resource tree. *STRING*'s  in tables are stored as 16-bit unicode strings.
 
 ```
 STRINGTABLE label  
@@ -283,7 +283,7 @@ ENDSTRINGTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="ACCELERATORTABLE MACROS"></a>ACCELERATORTABLE MACROS
 
-With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of type RT_ACCELERATOR into resource tree. Then add following table.
+With *ACCELERATORTABLE* macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of type RT_ACCELERATOR into resource tree. Then add following table.
 
 ```
 ACCELERATORTABLE label
