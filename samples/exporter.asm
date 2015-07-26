@@ -29,11 +29,6 @@ BYTE Title, "PE MACRO SETS",0
 BYTE Text, "Exports works!",0
 
 START
-
-; [ebp + 16] Reserved
-; [ebp + 12] Reason
-; [ebp +  8] HANDLE hModule
-DllMain:
 	mov eax, 1
 	ret
 	

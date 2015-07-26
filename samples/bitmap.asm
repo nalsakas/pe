@@ -77,8 +77,6 @@ BYTE buffer[100]
 
 ; Entry Point
 START
-
-WinMain:
 	push ebp
 	mov ebp, esp
 	

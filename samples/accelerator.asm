@@ -97,12 +97,6 @@ BYTE buffer[100h]
 
 ; Entry Point
 START
-
-; [ebp + 20] = nShowCmd
-; [ebp + 16] = lpCmdLine
-; [ebp + 12] = hPrevInst
-; [ebp + 8] = hInst
-WinMain:
 	push ebp
 	mov ebp, esp
 	

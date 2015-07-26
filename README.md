@@ -232,7 +232,7 @@ ENDMENU
 
 ## [:top:](#TABLE OF CONTENTS)<a name="DIALOG MACROS"></a>DIALOG MACROS
 
-In order to use dialog resources first include one resource with RT_DIALOG type into resource tree. Than use following *DIALOG* macro to define your dialog.
+In order to use dialog resources first include one resource with RT_DIALOG type into resource tree. Then use following *DIALOG* macro to define your dialog.
 ```
 DIALOG label, x, y, cx, cy  
   STYLE xxx                ; Optional  
@@ -283,7 +283,7 @@ ENDSTRINGTABLE
 
 ## [:top:](#TABLE OF CONTENTS)<a name="ACCELERATORTABLE MACROS"></a>ACCELERATORTABLE MACROS
 
-With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of type RT_ACCELERATOR into resource tree. Than add following table.
+With ACCELERATORTABLE macros you can include accelerators into your resources. Then you can use them inside asm with the help of LoadAccelerator API. To start with accelerators first you need to include a resource of type RT_ACCELERATOR into resource tree. Then add following table.
 
 ```
 ACCELERATORTABLE label
