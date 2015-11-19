@@ -42,8 +42,8 @@
 %define SECTIONNAME 'nasm'
 
 ; Subsystem
-; GUI = 1, CONSOLE = 2, NATIVE = 3
-%define SUBSYSTEM 1
+; NATIVE = 1, GUI = 2, CONSOLE = 3
+%define SUBSYSTEM 2
 
 ; Stack and Heap Sizes
 %define PE32_SizeOfStackReserve 0
@@ -1331,18 +1331,6 @@
 		%define IMAGEBASE DLL64_IMAGEBASE
 	%endif
 	
-	;Subsystem
-	%assign %%IMAGE_SUBSYSTEM_NATIVE 1
-	%assign %%IMAGE_SUBSYSTEM_WINDOWS_GUI 2
-	%assign %%IMAGE_SUBSYSTEM_WINDOWS_CUI 3
-	%if SUBSYSTEM == 1
-		%define %%Subsys %%IMAGE_SUBSYSTEM_WINDOWS_GUI
-	%elif SUBSYSTEM == 2
-		%define %%Subsys %%IMAGE_SUBSYSTEM_WINDOWS_CUI
-	%elif SUBSYSTEM == 3
-		%define %%Subsys %%IMAGE_SUBSYSTEM_NATIVE
-	%endif
-	
 	; Image Size
 	%define %%IMAGE_SIZE  ROUNDVS(%$IMAGE_END, %$IMAGE_SECTION_HEADER_END) + ROUNDVS(%$IMAGE_SECTION_HEADER_END, %$IMAGE_DOS_HEADER)
 	
@@ -1381,7 +1369,7 @@
 	DWORD   %%SizeOfImage, %%IMAGE_SIZE
 	DWORD   %%SizeOfHeaders, %%HEADERS_SIZE
 	DWORD   %%CheckSum
-	WORD    %%Subsystem, %%Subsys
+	WORD    %%Subsystem, SUBSYSTEM
 	WORD    %%DllCharacteristics
 	%ifctx pe32
 		DWORD   %%SizeOfStackReserve1, PE32_SizeOfStackReserve
