@@ -34,8 +34,6 @@ START
 	ret
 	
 MyExport:
-; instructions
-
 	push rbp
 	mov rbp, rsp
 	

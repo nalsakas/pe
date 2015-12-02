@@ -26,6 +26,8 @@ Why I created these macro sets? Answer is simple. Because I have a passion about
 
 With these macro sets you can do custom executables by yourself. You don't need any object linker or resource compiler whatsoever. You can import any function you want just by typing its name; you can export any local function you want; you can include any resource you want; you can experiment and get a deeper insight of pe file format.
 
+Currently DLL32/64 files doesn't support relocations. Resource data directory doesn't support ICON resource types also. Future versions may have that capabilities.
+
 Although there are a lot of macros under the hood, end user only need to know a few of them. Actually only 3 of them suffice for a very basic PE.
 
 ```

@@ -30,7 +30,7 @@ BYTE Text, "Exports works!",0
 
 START
 	mov eax, 1
-	ret
+	ret 12
 	
 ExportMe:
 	push ebp
