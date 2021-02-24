@@ -1,6 +1,4 @@
-# NASM PE MACROS
-
-Author: Seyhmus AKASLAN  
+# NASM PE MACROS  
 Contact: nalsakas@gmail.com  
 License: GPL v2
 
